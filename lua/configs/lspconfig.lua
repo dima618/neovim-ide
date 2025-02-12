@@ -16,6 +16,17 @@ for _, lsp in ipairs(servers) do
   }
 end
 
+-- lspconfig.rust_analyzer.setup {  
+--   cmd = {'/local/home/ilindmit/.toolbox/bin/rust-analyzer'},
+--   settings = {
+--     ['rust-analyzer'] = {
+--       diagnostics = {
+--         enable = false;
+--       }
+--     }
+--   }
+-- }
+
 -- configuring single server, example: typescript
 -- lspconfig.ts_ls.setup {
 --   on_attach = nvlsp.on_attach,
