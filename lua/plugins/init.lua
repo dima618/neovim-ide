@@ -29,7 +29,6 @@ return {
     lazy = false,
   },
 
-
   {
     "NeogitOrg/neogit",
     dependencies = {
@@ -69,21 +68,24 @@ return {
   },
 
   {
-    "olimorris/persisted.nvim",
-    lazy = true,
-    config = function()
-      local persisted = require('persisted')
-      persisted.setup({
-        autoload = true,
-      })
-    end,
+    'rmagatti/auto-session',
+    lazy = false,
+
+    ---enables autocomplete for opts
+    ---@module "auto-session"
+    ---@type AutoSession.Config
+    opts = {
+      suppressed_dirs = { '~/', '~/Projects', '~/Downloads', '/' },
+      -- log_level = 'debug',
+    }
   },
 
   {
-    "nvim-telescope/telescope.nvim",
-    opts = function(_, conf)
-      require("telescope").load_extension("persisted")
-      return conf
-    end,
-  }
+    'Bekaboo/dropbar.nvim',
+    -- optional, but required for fuzzy finder support
+    dependencies = {
+      'nvim-telescope/telescope-fzf-native.nvim',
+      build = 'make'
+    },
+  },
 }
