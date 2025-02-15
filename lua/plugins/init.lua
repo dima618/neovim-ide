@@ -29,6 +29,18 @@ return {
     lazy = false,
   },
 
+  -- {
+  --   "nvim-telescope/telescope.nvim",
+  --   config = function(_, conf)
+  --     conf.pickers = {
+  --       current_buffer_fuzzy_find = {
+  --         theme = "cursor"
+  --       }
+  --     }
+  --     return conf
+  --   end
+  -- },
+
   {
     "NeogitOrg/neogit",
     dependencies = {
@@ -53,7 +65,7 @@ return {
     config = function()
       local codewindow = require('codewindow')
       codewindow.setup({
-        auto_enable = true,
+        -- auto_enable = true,
         minimap_width = 15,
       })
       codewindow.apply_default_keybinds()
@@ -88,4 +100,23 @@ return {
       build = 'make'
     },
   },
+
+  {
+    'mfussenegger/nvim-dap',
+    lazy = false,
+  },
+
+  {
+    "nvim-neotest/nvim-nio"
+  },
+
+  {
+    "rcarriga/nvim-dap-ui",
+    config = function()
+      require("dapui").setup()
+    end,
+    dependencies = {
+      "mfussenegger/nvim-dap"
+    }
+  }
 }

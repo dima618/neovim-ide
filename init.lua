@@ -1,6 +1,7 @@
 vim.g.base46_cache = vim.fn.stdpath "data" .. "/base46/"
 vim.g.mapleader = " "
 vim.opt.clipboard = "unnamedplus"
+vim.opt.cursorline = true
 
 -- bootstrap lazy and all plugins
 local lazypath = vim.fn.stdpath "data" .. "/lazy/lazy.nvim"
@@ -37,27 +38,61 @@ vim.schedule(function()
   require "mappings"
 end)
 
-vim.g.rustaceanvim = {
-  -- Plugin configuration
-  tools = {
-  },
-  -- LSP configuration
-  server = {
-    on_attach = function(client, bufnr)
-      -- you can also put keymaps in here
-    end,
-    cmd = { '/local/home/ilindmit/.toolbox/bin/rust-analyzer' },
+-- dap and dapui
+local dap, dapui = require("dap"), require("dapui")
+dap.listeners.after.event_initialized["dapui_config"] = function()
+  dapui.open()
+end
+dap.listeners.before.event_terminated["dapui_config"] = function()
+  dapui.close()
+end
+dap.listeners.before.event_exited["dapui_config"] = function()
+  dapui.close()
+end
+vim.fn.sign_define('DapBreakpoint', { text = '🔴', texthl = '', linehl = '', numhl = '' })
+vim.fn.sign_define('DapStopped', { text = '▶️', texthl = '', linehl = '', numhl = '' })
+vim.fn.sign_define('DapBreakpointCondition', { text = '❓', texthl = '', linehl = '', numhl = '' })
+vim.fn.sign_define('DapBreakpointRejected', { text = '❌', texthl = '', linehl = '', numhl = '' })
 
-    default_settings = {
-      -- rust-analyzer language server configuration
-      ['rust-analyzer'] = {
+
+-- rustacean
+vim.g.rustaceanvim = function()
+  -- local extension_path = vim.env.HOME .. '/.vscode/extensions/vadimcn.vscode-lldb-1.11.3/'
+  -- local this_os = vim.uv.os_uname().sysname;
+  --
+  -- if this_os:find "Linux" then
+  --   extension_path = vim.env.HOME .. '/.vscode-server/extensions/vadimcn.vscode-lldb-1.11.3/'
+  -- end
+  -- local codelldb_path = extension_path .. 'adapter/codelldb'
+  -- local liblldb_path = extension_path .. 'lldb/lib/liblldb'
+  --
+  -- -- The liblldb extension is .so for Linux and .dylib for MacOS
+  -- liblldb_path = liblldb_path .. (this_os == "Linux" and ".so" or ".dylib")
+
+  local cfg = require('rustaceanvim.config')
+  return {
+    -- Plugin configuration
+    tools = {
+    },
+    -- LSP configuration
+    server = {
+      on_attach = function(client, bufnr)
+        -- you can also put keymaps in here
+      end,
+      cmd = { '/local/home/ilindmit/.toolbox/bin/rust-analyzer' },
+
+      default_settings = {
+        -- rust-analyzer language server configuration
+        ['rust-analyzer'] = {
+        },
       },
     },
-  },
-  -- DAP configuration
-  dap = {
-  },
-}
+    -- DAP configuration
+    dap = {
+      -- adapter = cfg.get_codelldb_adapter(codelldb_path, liblldb_path),
+    },
+  }
+end
 
 vim.api.nvim_create_autocmd("LspAttach", {
   group = vim.api.nvim_create_augroup("lsp", { clear = true }),
