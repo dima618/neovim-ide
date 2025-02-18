@@ -118,5 +118,10 @@ return {
     dependencies = {
       "mfussenegger/nvim-dap"
     }
+  },
+
+  {
+    "ggandor/leap.nvim",
+    lazy = false
   }
 }

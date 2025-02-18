@@ -18,7 +18,8 @@ map('n', '<leader>fr', builtin.lsp_references, { desc = 'Telescope LSP Reference
 map('n', '<leader>fi', builtin.lsp_implementations, { desc = 'Telescope LSP Implementations' })
 map('n', '<leader>fd', builtin.lsp_definitions, { desc = 'Telescope LSP Definitions' })
 map('n', '<leader>ftd', builtin.lsp_type_definitions, { desc = 'Telescope LSP Type Definitions' })
-
+map("n", "<leader>fz", "<cmd>Telescope current_buffer_fuzzy_find theme=cursor<CR>",
+  { desc = "telescope find in current buffer" })
 map('n', '<leader>sl', '<cmd> SessionSearch <cr>', { desc = 'Open Telescope Session Lens' })
 
 map('n', '<leader>df', vim.diagnostic.open_float, { desc = 'LSP Open Float Diagnostic' })
@@ -35,5 +36,11 @@ map('n', '<F11>', require 'dap'.step_into, { desc = 'DAP - Step Into' })
 map('n', '<F12>', require 'dap'.step_out, { desc = 'DAP - Step Out' })
 map('n', '<leader>tb', require 'dap'.toggle_breakpoint, { desc = 'DAP - Toggle BP' })
 map('n', '<leader>dui', require("dapui").toggle, { desc = "Toggle DAP UI" })
+
+-- leap mappings
+map({ 'n', 'x', 'o' }, 's', '<Plug>(leap-forward)')
+map({ 'n', 'x', 'o' }, 'S', '<Plug>(leap-backward)')
+map({ 'n', 'x', 'o' }, 'gs', '<Plug>(leap-from-window)', { desc = "Leap - Leap from window" })
+
 -- map({ "n", "i", "v" }, "<C-s>", "<cmd> w <cr>")
 --
