@@ -25,4 +25,10 @@ M.ui = {
   }
 }
 
+M.mason = {
+  pkgs = {
+    "codelldb"
+  }
+}
+
 return M

@@ -24,23 +24,23 @@ vim.keymap.set(
     desc = "Rustacean Hover Action"
   }
 )
-vim.keymap.set(
-  "n",
-  "<leader>rt",
-  function()
-    vim.cmd.RustLsp('testables')
-  end,
-  {
-    desc = "Execute Rust Testable"
-  }
-)
-vim.keymap.set(
-  "n",
-  "<leader>db",
-  function()
-    vim.cmd.RustLsp('debug')
-  end,
-  {
-    desc = "Rust Debug at Cursor"
-  }
-)
+-- vim.keymap.set(
+--   "n",
+--   "<leader>rt",
+--   function()
+--     vim.cmd.RustLsp('testables')
+--   end,
+--   {
+--     desc = "Execute Rust Testable"
+--   }
+-- )
+-- vim.keymap.set(
+--   "n",
+--   "<leader>db",
+--   function()
+--     vim.cmd.RustLsp('debug')
+--   end,
+--   {
+--     desc = "Rust Debug at Cursor"
+--   }
+-- )

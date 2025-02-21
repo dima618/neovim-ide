@@ -57,19 +57,6 @@ vim.fn.sign_define('DapBreakpointRejected', { text = '❌', texthl = '', linehl 
 
 -- rustacean
 vim.g.rustaceanvim = function()
-  -- local extension_path = vim.env.HOME .. '/.vscode/extensions/vadimcn.vscode-lldb-1.11.3/'
-  -- local this_os = vim.uv.os_uname().sysname;
-  --
-  -- if this_os:find "Linux" then
-  --   extension_path = vim.env.HOME .. '/.vscode-server/extensions/vadimcn.vscode-lldb-1.11.3/'
-  -- end
-  -- local codelldb_path = extension_path .. 'adapter/codelldb'
-  -- local liblldb_path = extension_path .. 'lldb/lib/liblldb'
-  --
-  -- -- The liblldb extension is .so for Linux and .dylib for MacOS
-  -- liblldb_path = liblldb_path .. (this_os == "Linux" and ".so" or ".dylib")
-
-  local cfg = require('rustaceanvim.config')
   return {
     -- Plugin configuration
     tools = {
@@ -84,12 +71,14 @@ vim.g.rustaceanvim = function()
       default_settings = {
         -- rust-analyzer language server configuration
         ['rust-analyzer'] = {
+          cargo = {
+            targetDir = true
+          },
         },
       },
     },
     -- DAP configuration
     dap = {
-      -- adapter = cfg.get_codelldb_adapter(codelldb_path, liblldb_path),
     },
   }
 end

@@ -89,7 +89,16 @@ return {
     opts = {
       suppressed_dirs = { '~/', '~/Projects', '~/Downloads', '/' },
       -- log_level = 'debug',
-    }
+    },
+    config = function()
+      require('auto-session').setup {
+        -- post_restore_cmds = {
+        --   function()
+        --     require("harpoon").setup()
+        --   end
+        -- }
+      }
+    end,
   },
 
   {
@@ -123,5 +132,40 @@ return {
   {
     "ggandor/leap.nvim",
     lazy = false
+  },
+
+  {
+    "ThePrimeagen/harpoon",
+    branch = "harpoon2",
+    dependencies = { "nvim-lua/plenary.nvim" },
+    config = function()
+      require("harpoon").setup({
+        settings = {
+          save_on_toggle = true,
+          sync_on_ui_close = true,
+        }
+      })
+    end,
+  },
+
+  {
+    "nvim-neotest/neotest",
+    dependencies = {
+      "nvim-neotest/nvim-nio",
+      "nvim-lua/plenary.nvim",
+      "antoinemadec/FixCursorHold.nvim",
+      "nvim-treesitter/nvim-treesitter"
+    },
+    config = function()
+      require("neotest").setup {
+        status = {
+          virtual_text = true
+        },
+        output = { open_on_run = true },
+        adapters = {
+          require('rustaceanvim.neotest')
+        }
+      }
+    end
   }
 }
