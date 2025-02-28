@@ -18,8 +18,7 @@ map('n', '<leader>fr', builtin.lsp_references, { desc = 'Telescope LSP Reference
 map('n', '<leader>fi', builtin.lsp_implementations, { desc = 'Telescope LSP Implementations' })
 map('n', '<leader>fd', builtin.lsp_definitions, { desc = 'Telescope LSP Definitions' })
 map('n', '<leader>ftd', builtin.lsp_type_definitions, { desc = 'Telescope LSP Type Definitions' })
--- map("n", "<leader>fz", "<cmd>Telescope current_buffer_fuzzy_find theme=cursor<CR>",
---   { desc = "telescope find in current buffer" })
+
 map('n', '<leader>sl', '<cmd> SessionSearch <cr>', { desc = 'Open Telescope Session Lens' })
 
 map('n', '<leader>df', vim.diagnostic.open_float, { desc = 'LSP Open Float Diagnostic' })
@@ -31,11 +30,18 @@ map('n', '[;', dropbar_api.goto_context_start, { desc = 'Go to start of current 
 map('n', '];', dropbar_api.select_next_context, { desc = 'Select next context' })
 
 map('n', '<F5>', require 'dap'.continue, { desc = 'DAP - Continue' })
-map('n', '<F10>', require 'dap'.step_over, { desc = 'DAP - Step Over' })
-map('n', '<F11>', require 'dap'.step_into, { desc = 'DAP - Step Into' })
-map('n', '<F12>', require 'dap'.step_out, { desc = 'DAP - Step Out' })
+map('n', '<F6>', require 'dap'.step_over, { desc = 'DAP - Step Over' })
+map('n', '<F7>', require 'dap'.step_into, { desc = 'DAP - Step Into' })
+map('n', '<F8>', require 'dap'.step_out, { desc = 'DAP - Step Out' })
 map('n', '<leader>tb', require 'dap'.toggle_breakpoint, { desc = 'DAP - Toggle BP' })
 map('n', '<leader>dui', require("dapui").toggle, { desc = "Toggle DAP UI" })
+
+-- Tmux navigator remaps
+map('n', '<C-h>', '<cmd> TmuxNavigateLeft <cr>', { desc = "Window Left", remap = true })
+map('n', '<C-j>', '<cmd> TmuxNavigateDown <cr>', { desc = "Window Down", remap = true })
+map('n', '<C-k>', '<cmd> TmuxNavigateUp <cr>', { desc = "Window Up", remap = true })
+map('n', '<C-l>', '<cmd> TmuxNavigateRight <cr>', { desc = "Window Right", remap = true })
+map('n', '<C-\\>', '<cmd> TmuxNavigatePrevious <cr>', { desc = "Window Previous", remap = true })
 
 -- leap mappings
 map({ 'n', 'x', 'o' }, 's', '<Plug>(leap-forward)')
