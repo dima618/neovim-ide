@@ -36,6 +36,7 @@ require "nvchad.autocmds"
 
 vim.schedule(function()
   require "mappings"
+  require "scripts"
 end)
 
 -- dap and dapui
@@ -93,6 +94,16 @@ vim.api.nvim_create_autocmd("LspAttach", {
       end,
     })
   end
+})
+
+-- Show nvdash when all buffers are closed
+vim.api.nvim_create_autocmd("BufDelete", {
+  callback = function()
+    local bufs = vim.t.bufs
+    if #bufs == 1 and vim.api.nvim_buf_get_name(bufs[1]) == "" then
+      vim.cmd "Nvdash"
+    end
+  end,
 })
 
 if vim.lsp.inlay_hint then

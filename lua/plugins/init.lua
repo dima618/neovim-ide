@@ -29,6 +29,15 @@ return {
     lazy = false,
   },
 
+  {
+    "nvim-tree/nvim-tree.lua",
+    opts = function(_, opts)
+      opts.filters = {
+        git_ignored = false,
+      }
+    end,
+  },
+
   -- {
   --   "nvim-telescope/telescope.nvim",
   --   config = function(_, conf)
