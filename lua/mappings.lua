@@ -14,11 +14,12 @@ map("v", "<", "<gv", { silent = true, desc = "Indent" })
 
 map("n", ";", ":", { desc = "CMD enter command mode" })
 map("i", "jk", "<ESC>")
+
+-- Telescope keymaps
 map('n', '<leader>fr', builtin.lsp_references, { desc = 'Telescope LSP References' })
 map('n', '<leader>fi', builtin.lsp_implementations, { desc = 'Telescope LSP Implementations' })
 map('n', '<leader>fd', builtin.lsp_definitions, { desc = 'Telescope LSP Definitions' })
 map('n', '<leader>ftd', builtin.lsp_type_definitions, { desc = 'Telescope LSP Type Definitions' })
-
 map('n', '<leader>sl', '<cmd> SessionSearch <cr>', { desc = 'Open Telescope Session Lens' })
 
 map('n', '<leader>df', vim.diagnostic.open_float, { desc = 'LSP Open Float Diagnostic' })

@@ -38,18 +38,6 @@ return {
     end,
   },
 
-  -- {
-  --   "nvim-telescope/telescope.nvim",
-  --   config = function(_, conf)
-  --     conf.pickers = {
-  --       current_buffer_fuzzy_find = {
-  --         theme = "cursor"
-  --       }
-  --     }
-  --     return conf
-  --   end
-  -- },
-
   {
     "NeogitOrg/neogit",
     dependencies = {
@@ -180,5 +168,5 @@ return {
   {
     "christoomey/vim-tmux-navigator",
     lazy = false
-  }
+  },
 }
