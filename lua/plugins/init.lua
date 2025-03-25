@@ -146,27 +146,15 @@ return {
   },
 
   {
-    "nvim-neotest/neotest",
-    dependencies = {
-      "nvim-neotest/nvim-nio",
-      "nvim-lua/plenary.nvim",
-      "antoinemadec/FixCursorHold.nvim",
-      "nvim-treesitter/nvim-treesitter"
-    },
-    config = function()
-      require("neotest").setup {
-        status = {
-          virtual_text = true
-        },
-        output = { open_on_run = true },
-        adapters = {
-          require('rustaceanvim.neotest')
-        }
-      }
-    end
-  },
-  {
     "christoomey/vim-tmux-navigator",
     lazy = false
   },
+
+  {
+    "ray-x/lsp_signature.nvim",
+    event = "InsertEnter",
+    opts = {
+      -- cfg options
+    },
+  }
 }

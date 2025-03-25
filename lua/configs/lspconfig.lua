@@ -16,7 +16,7 @@ for _, lsp in ipairs(servers) do
   }
 end
 
--- lspconfig.rust_analyzer.setup {  
+-- lspconfig.rust_analyzer.setup {
 --   cmd = {'/local/home/ilindmit/.toolbox/bin/rust-analyzer'},
 --   settings = {
 --     ['rust-analyzer'] = {

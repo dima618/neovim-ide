@@ -27,7 +27,10 @@ M.ui = {
 
 M.mason = {
   pkgs = {
-    "codelldb"
+    "codelldb",
+    "jdtls",
+    "java-debug-adapter",
+    "java-test",
   }
 }
 
