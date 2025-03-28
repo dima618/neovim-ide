@@ -5,7 +5,7 @@ end
 return {
   {
     'nvimdev/lspsaga.nvim',
-    ft = 'java',
+    -- ft = 'java',
     config = function()
       map_keys('pd', 'peek_type_definition', 'Lspsaga Peek Definition')
 

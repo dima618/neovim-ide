@@ -55,7 +55,7 @@ map({ 'n', 'v' }, '<leader>gb', gitsigns.blame, { desc = "Gitsigns Show Blame" }
 
 
 map({ 'n', 'v' }, '<leader>glb', function()
-  gitsigns.blame_line({ full = true })
+    gitsigns.blame_line({ full = true })
 end, { desc = "Gitsigns Show Current Line Blame" })
 
 map('n', '<leader>gph', gitsigns.preview_hunk_inline, { desc = "Gitsigns Preview Hunk Inline" })
@@ -63,10 +63,10 @@ map('n', '<leader>grh', gitsigns.reset_hunk, { desc = "Gitsigns Reset Hunk" })
 map('n', '<leader>gsh', gitsigns.stage_hunk, { desc = "Gitsigns Stage Hunk" })
 
 map('v', '<leader>gsh', function()
-  gitsigns.stage_hunk({ vim.fn.line('.'), vim.fn.line('v') })
+    gitsigns.stage_hunk({ vim.fn.line('.'), vim.fn.line('v') })
 end, { desc = "Gitsigns Stage Hunk" })
 map('v', '<leader>grh', function()
-  gitsigns.reset_hunk({ vim.fn.line('.'), vim.fn.line('v') })
+    gitsigns.reset_hunk({ vim.fn.line('.'), vim.fn.line('v') })
 end, { desc = "Gitsigns Reset Hunk" })
 
 
@@ -75,23 +75,23 @@ local harpoon = require('harpoon')
 
 local conf = require("telescope.config").values
 local function toggle_telescope(harpoon_files)
-  local file_paths = {}
-  for _, item in ipairs(harpoon_files.items) do
-    table.insert(file_paths, item.value)
-  end
+    local file_paths = {}
+    for _, item in ipairs(harpoon_files.items) do
+        table.insert(file_paths, item.value)
+    end
 
-  require("telescope.pickers").new({}, {
-    prompt_title = "Harpoon",
-    finder = require("telescope.finders").new_table({
-      results = file_paths,
-    }),
-    previewer = conf.file_previewer({}),
-    sorter = conf.generic_sorter({}),
-  }):find()
+    require("telescope.pickers").new({}, {
+        prompt_title = "Harpoon",
+        finder = require("telescope.finders").new_table({
+            results = file_paths,
+        }),
+        previewer = conf.file_previewer({}),
+        sorter = conf.generic_sorter({}),
+    }):find()
 end
 
 map({ "n", "v" }, "<leader>hl", function() toggle_telescope(harpoon:list()) end,
-  { desc = "Open harpoon window", remap = true })
+    { desc = "Open harpoon window", remap = true })
 
 map({ "n", "v" }, "<leader>ha", function() harpoon:list():add() end, { desc = "Add to harpoon list" })
 
@@ -103,30 +103,36 @@ map({ "n", "v" }, "<leader>4", function() harpoon:list():select(4) end)
 -- neotest
 local neotest = require("neotest")
 map(
-  "n",
-  "<leader>rt",
-  function()
-    neotest.run.run()
-  end,
-  { desc = "Run test" }
+    "n",
+    "<leader>rt",
+    function()
+        neotest.run.run()
+    end,
+    { desc = "Run test" }
 )
 map(
-  "n",
-  "<leader>rat",
-  function()
-    neotest.run.run(vim.fn.expand("%"))
-  end,
-  { desc = "Run all test" }
+    "n",
+    "<leader>rat",
+    function()
+        neotest.run.run(vim.fn.expand("%"))
+    end,
+    { desc = "Run all test" }
 )
 map("n",
-  "<leader>rdt",
-  function()
-    neotest.run.run({ strategy = "dap" })
-  end,
-  { desc = "Debug test" }
+    "<leader>rdt",
+    function()
+        neotest.run.run({ strategy = "dap" })
+    end,
+    { desc = "Debug test" }
 )
 map("n", "<leader>st", neotest.run.stop, { desc = "Stop test" })
 map("n", "<leader>ts", neotest.summary.toggle, { desc = "Toggle neotest summary" })
 
 -- map({ "n", "i", "v" }, "<C-s>", "<cmd> w <cr>")
---
+
+-- Peek definition
+local peek = require('goto-preview')
+map("n", "<leader>pd", peek.goto_preview_definition, { desc = "Peek Definition" })
+map("n", "<leader>pi", peek.goto_preview_implementation, { desc = "Peek Implementations" })
+map("n", "<leader>pr", peek.goto_preview_references, { desc = "Peek References" })
+map("n", "<leader>pca", peek.close_all_win, { desc = "Close All Peek Windows" })
