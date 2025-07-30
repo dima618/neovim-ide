@@ -43,12 +43,6 @@ local dap, dapui = require("dap"), require("dapui")
 dap.listeners.after.event_initialized["dapui_config"] = function()
     dapui.open()
 end
-dap.listeners.before.event_terminated["dapui_config"] = function()
-    dapui.close()
-end
-dap.listeners.before.event_exited["dapui_config"] = function()
-    dapui.close()
-end
 vim.fn.sign_define('DapBreakpoint', { text = '🔴', texthl = '', linehl = '', numhl = '' })
 vim.fn.sign_define('DapStopped', { text = '▶️', texthl = '', linehl = '', numhl = '' })
 vim.fn.sign_define('DapBreakpointCondition', { text = '❓', texthl = '', linehl = '', numhl = '' })
@@ -83,26 +77,26 @@ vim.g.rustaceanvim = function()
     }
 end
 
-vim.api.nvim_create_autocmd("LspAttach", {
-    group = vim.api.nvim_create_augroup("lsp", { clear = true }),
-    callback = function(args)
-        vim.api.nvim_create_autocmd("BufWritePre", {
-            buffer = args.buf,
-            callback = function()
-                vim.lsp.buf.format { async = false, id = args.data.client_id }
-            end,
-        })
-    end
-})
+-- vim.api.nvim_create_autocmd("LspAttach", {
+--     group = vim.api.nvim_create_augroup("lsp", { clear = true }),
+--     callback = function(args)
+--         vim.api.nvim_create_autocmd("BufWritePre", {
+--             buffer = args.buf,
+--             callback = function(opts)
+--                 if vim.bo[opts.buf].filetype ~= 'java' then
+--                     vim.lsp.buf.format { async = false, id = args.data.client_id }
+--                 end
+--             end,
+--         })
+--     end
+-- })
 
--- Show nvdash when all buffers are closed
-vim.api.nvim_create_autocmd("BufDelete", {
-    callback = function()
-        local bufs = vim.t.bufs
-        if #bufs == 1 and vim.api.nvim_buf_get_name(bufs[1]) == "" then
-            vim.cmd "Nvdash"
-        end
-    end,
+vim.api.nvim_create_autocmd("BufEnter", {
+  pattern = "*",
+  callback = function()
+    local tw = vim.opt.textwidth:get()
+    vim.opt.colorcolumn = tw > 0 and tostring(tw + 1) or ""
+  end
 })
 
 if vim.lsp.inlay_hint then

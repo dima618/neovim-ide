@@ -1,0 +1,60 @@
+Language: Java
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments:
+ Enabled: false
+AlignConsecutiveDeclarations:
+ Enabled: false
+AlignEscapedNewlines: Right
+AlignOperands: Align
+AlignTrailingComments:
+ Kind: Leave
+AllowAllParametersOfDeclarationOnNextLine: true
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: None
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakAfterReturnType: None
+AlwaysBreakBeforeMultilineStrings: false
+BinPackArguments: true
+BinPackParameters: true
+BreakAfterJavaFieldAnnotations: true
+BreakBeforeBinaryOperators: All
+BreakBeforeBraces: Attach
+BreakBeforeTernaryOperators: true
+BreakStringLiterals: true
+ColumnLimit: 130
+ConstructorInitializerIndentWidth: 4
+ContinuationIndentWidth: 8
+Cpp11BracedListStyle: true
+DisableFormat: false
+IndentCaseLabels: false
+IndentWidth: 4
+IndentWrappedFunctionNames: true
+InsertNewlineAtEOF: true
+JavaImportGroups: [java, amazon, aws, dagger, edu, io, lombok, net, software, org]
+KeepEmptyLinesAtTheStartOfBlocks: true
+MaxEmptyLinesToKeep: 1
+PenaltyBreakAssignment: 100
+PenaltyBreakBeforeFirstCallParameter: 150
+PenaltyBreakComment: 100
+PenaltyBreakFirstLessLess: 150
+PenaltyBreakOpenParenthesis: 120
+PenaltyBreakString: 200
+PenaltyExcessCharacter: 500
+PenaltyReturnTypeOnItsOwnLine: 300
+ReflowComments: true
+SortIncludes: CaseSensitive
+SpaceAfterCStyleCast: true
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCaseColon: false
+SpaceBeforeParens: ControlStatements
+SpaceBeforeRangeBasedForLoopColon: true
+SpaceInEmptyBlock: true
+SpacesBeforeTrailingComments: 1
+SpacesInAngles: Never
+SpacesInContainerLiterals: true
+SpacesInParens: Never
+SpacesInSquareBrackets: false
+TabWidth: 4
+UseTab: Never

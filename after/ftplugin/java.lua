@@ -1,3 +1,5 @@
+vim.opt_local.textwidth = 130
+
 local jdtls = require("jdtls")
 local jdtls_dap = require("jdtls.dap")
 local jdtls_setup = require("jdtls.setup")
@@ -19,45 +21,39 @@ if bemol_dir then
     end
 end
 
-local project_name = vim.fn.fnamemodify(root_dir, ":p:h:t")
-local workspace_dir = home .. "/.cache/jdtls/workspace" .. project_name
+local project_name = vim.fn.fnamemodify(bemol_dir, ":h:s?/??:gs?/?.?") .. "." .. vim.fn.fnamemodify(root_dir, ":p:h:t")
+local workspace_dir = home .. "/.cache/jdtls/workspaces/" .. project_name
 
-local path_to_jdtls = require("mason-registry").get_package("jdtls"):get_install_path()
-local path_to_jdebug = require("mason-registry").get_package("java-debug-adapter"):get_install_path()
-local path_to_jtest = require("mason-registry").get_package("java-test"):get_install_path()
+local path_to_jdtls = vim.fn.expand("$MASON/share/jdtls")
+local path_to_jdebug = vim.fn.expand("$MASON/share/java-debug-adapter")
+local path_to_jtest = vim.fn.expand("$MASON/share/java-test")
 
 local function get_config_dir()
     if vim.fn.has('linux') == 1 then
-        return '/config_linux'
+        return '/config'
     elseif vim.fn.has('mac') == 1 then
-        return '/config_mac'
+        return '/config'
     else
-        return '/config_win'
+        return '/config'
     end
 end
 
 local path_to_config = path_to_jdtls .. get_config_dir()
 local lombok_path = path_to_jdtls .. "/lombok.jar"
 
--- 💀
 local path_to_jar = vim.fn.glob(path_to_jdtls .. "/plugins/org.eclipse.equinox.launcher_*.jar", true)
 
 local bundles = {
-    vim.fn.glob(path_to_jdebug .. "/extension/server/com.microsoft.java.debug.plugin-*.jar", true),
+    vim.fn.glob(path_to_jdebug .. "/com.microsoft.java.debug.plugin-*.jar", true),
 }
 
-vim.list_extend(bundles, vim.split(vim.fn.glob(path_to_jtest .. "/extension/server/*.jar", true), "\n"))
+vim.list_extend(bundles, vim.split(vim.fn.glob(path_to_jtest .. "/*.jar", true), "\n"))
 
 -- LSP settings for Java.
 local on_attach = function(_, bufnr)
     jdtls.setup_dap({ hotcodereplace = "auto" })
     jdtls_dap.setup_dap_main_class_configs()
     jdtls_setup.add_commands()
-
-    -- Create a command `:Format` local to the LSP buffer
-    vim.api.nvim_buf_create_user_command(bufnr, "Format", function(_)
-        vim.lsp.buf.format()
-    end, { desc = "Format current buffer with LSP" })
 
     require("lsp_signature").on_attach({
         bind = true,
@@ -67,9 +63,6 @@ local on_attach = function(_, bufnr)
         },
         hint_prefix = "󱄑 ",
     }, bufnr)
-
-    -- NOTE: comment out if you don't use Lspsaga
-    -- require 'lspsaga'.init_lsp_saga()
 end
 
 local capabilities = {
@@ -90,6 +83,9 @@ local config = {
         allow_incremental_sync = true,
     }
 }
+
+local corretto_17 = "/usr/lib/jvm/java-17-amazon-corretto"
+local corretto_21 = "/usr/lib/jvm/java-21-amazon-corretto"
 
 config.cmd = {
     --
@@ -138,7 +134,7 @@ config.settings = {
         format = {
             enabled = true,
             settings = {
-                url = vim.fn.stdpath("config") .. "/style/java-style.xml",
+                url = vim.fn.stdpath("config") .. "/style/magnolio-eclipse.xml",
             },
         },
         eclipse = {
@@ -149,9 +145,6 @@ config.settings = {
         },
         signatureHelp = { enabled = true },
         contentProvider = { preferred = "fernflower" },
-        -- eclipse = {
-        -- 	downloadSources = true,
-        -- },
         -- implementationsCodeLens = {
         -- 	enabled = true,
         -- },
@@ -205,21 +198,21 @@ config.settings = {
         codeGeneration = {
             toString = {
                 template = "${object.className}{${member.name()}=${member.value}, ${otherMembers}}",
-                -- flags = {
-                -- 	allow_incremental_sync = true,
-                -- },
+                flags = {
+                	allow_incremental_sync = true,
+                },
             },
             useBlocks = true,
         },
         configuration = {
             runtimes = {
                 {
-                    name = "corretto-17",
-                    path = "/usr/lib/jvm/java-17-amazon-corretto"
+                    name = "JavaSE-17",
+                    path = corretto_17
                 },
                 {
-                    name = "corretto-21",
-                    path = "/usr/lib/jvm/java-21-amazon-corretto"
+                    name = "JavaSE-21",
+                    path = corretto_21
                 },
             }
         }
@@ -253,4 +246,39 @@ config.init_options = {
 require('jdtls').start_or_attach(config)
 
 -- Set Java Specific Keymaps
-require("jdtls.keymaps")
+vim.cmd(
+    "command! -buffer -nargs=? -complete=custom,v:lua.require'jdtls'._complete_compile JdtCompile lua require('jdtls').compile(<f-args>)"
+)
+vim.cmd(
+    "command! -buffer -nargs=? -complete=custom,v:lua.require'jdtls'._complete_set_runtime JdtSetRuntime lua require('jdtls').set_runtime(<f-args>)"
+)
+vim.cmd("command! -buffer JdtUpdateConfig lua require('jdtls').update_project_config()")
+vim.cmd("command! -buffer JdtJol lua require('jdtls').jol()")
+vim.cmd("command! -buffer JdtBytecode lua require('jdtls').javap()")
+vim.cmd("command! -buffer JdtJshell lua require('jdtls').jshell()")
+
+local bufnr = vim.api.nvim_get_current_buf()
+
+local map = vim.keymap.set
+
+map('n', '<leader>jo', require 'jdtls'.organize_imports,
+    { desc = "Organize Imports", buffer = bufnr, nowait = true, remap = false })
+map('n', '<leader>ju', '<Cmd>JdtUpdateConfig<CR>',
+    { desc = "Update Java Config", buffer = bufnr, nowait = true, remap = false })
+
+-- Test keymaps
+local test_config = {
+    vmArgs = "-ea -javaagent:/home/ilindmit/.jmockit.jar -Dmagnolio.islocalfleet=true",
+    javaExec = "/usr/lib/jvm/java-17-amazon-corretto.x86_64/bin/java"
+}
+
+map('n', '<leader>dc', function()
+    require 'jdtls'.test_class({
+        config_overrides = test_config
+    })
+end, { desc = "Debug Test Class (DAP)", remap = true })
+map('n', '<leader>dt', function()
+    require 'jdtls'.test_nearest_method({
+        config_overrides = test_config
+    })
+end, { desc = "Debug Nearest Method (DAP)", remap = true })

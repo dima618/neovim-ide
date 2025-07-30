@@ -1,9 +1,9 @@
 return {
-    {
-        "stevearc/conform.nvim",
-        -- event = 'BufWritePre', -- uncomment for format on save
-        opts = require "configs.conform",
-    },
+    -- {
+    --     "stevearc/conform.nvim",
+    --     -- event = 'BufWritePre', -- uncomment for format on save
+    --     opts = require "configs.conform",
+    -- },
     {
         "neovim/nvim-lspconfig",
         config = function()
@@ -153,4 +153,8 @@ return {
         event = "BufEnter",
         config = true, -- necessary as per https://github.com/rmagatti/goto-preview/issues/88
     },
+    {
+        "joechrisellis/lsp-format-modifications.nvim",
+        dependencies = { "nvim-lua/plenary.nvim" },
+    }
 }
