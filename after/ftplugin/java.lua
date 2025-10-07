@@ -8,19 +8,7 @@ local home = os.getenv("HOME")
 local root_markers = { ".git", "mvnw", "gradlew", "pom.xml", "build.gradle", "Config" }
 local root_dir = jdtls_setup.find_root(root_markers)
 
--- Bemol Init
 local bemol_dir = vim.fs.find({ ".bemol" }, { upward = true, type = "directory" })[1]
-local ws_folders_lsp = {}
-if bemol_dir then
-    local file = io.open(bemol_dir .. "/ws_root_folders", "r")
-    if file then
-        for line in file:lines() do
-            table.insert(ws_folders_lsp, line)
-        end
-        file:close()
-    end
-end
-
 local project_name = vim.fn.fnamemodify(bemol_dir, ":h:s?/??:gs?/?.?") .. "." .. vim.fn.fnamemodify(root_dir, ":p:h:t")
 local workspace_dir = home .. "/.cache/jdtls/workspaces/" .. project_name
 
@@ -228,6 +216,19 @@ config.on_attach = on_attach
 config.capabilities = capabilities
 config.on_init = function(client, _)
     client.notify('workspace/didChangeConfiguration', { settings = config.settings })
+
+    -- Init Bemol
+    local ws_folders_lsp = {}
+    if bemol_dir then
+        local file = io.open(bemol_dir .. "/ws_root_folders", "r")
+        if file then
+            for line in file:lines() do
+                table.insert(ws_folders_lsp, line)
+            end
+            file:close()
+        end
+    end
+
     for _, line in ipairs(ws_folders_lsp) do
         print("Adding workspace folder: " .. line)
         vim.lsp.buf.add_workspace_folder(line)
@@ -265,7 +266,8 @@ map('n', '<leader>jo', require 'jdtls'.organize_imports,
     { desc = "Organize Imports", buffer = bufnr, nowait = true, remap = false })
 map('n', '<leader>ju', '<Cmd>JdtUpdateConfig<CR>',
     { desc = "Update Java Config", buffer = bufnr, nowait = true, remap = false })
-
+map('n', '<leader>jb', '<Cmd>JdtCompile<CR>',
+    { desc = "Compile Java Code", buffer = bufnr, nowait = true, remap = false })
 -- Test keymaps
 local test_config = {
     vmArgs = "-ea -javaagent:/home/ilindmit/.jmockit.jar -Dmagnolio.islocalfleet=true",
