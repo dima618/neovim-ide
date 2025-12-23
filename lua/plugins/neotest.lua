@@ -1,14 +1,7 @@
 return {
---    {
---        "rcasia/neotest-java",
-         -- ft = "java",
---        dependencies = {
---            "mfussenegger/nvim-jdtls",
---            "mfussenegger/nvim-dap",           -- for the debugger
---            "rcarriga/nvim-dap-ui",            -- recommended
---            "theHamsta/nvim-dap-virtual-text", -- recommended
---      },
---    },
+    {
+      'atm1020/neotest-jdtls'
+    },
     {
         "nvim-neotest/neotest",
         dependencies = {
@@ -25,6 +18,7 @@ return {
                 output = { open_on_run = true },
                 adapters = {
                     require('rustaceanvim.neotest'),
+                    require('neotest-jdtls')
                     -- ["neotest-java"] = function()
                     --     return require('neotest-jdtls')
                     -- end

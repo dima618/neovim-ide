@@ -58,6 +58,15 @@ map('n', '<F6>', dap.step_over, { desc = 'DAP - Step Over' })
 map('n', '<F7>', dap.step_into, { desc = 'DAP - Step Into' })
 map('n', '<F8>', dap.step_out, { desc = 'DAP - Step Out' })
 map('n', '<leader>tb', dap.toggle_breakpoint, { desc = 'DAP - Toggle BP' })
+map('n', '<space>tcb', function()
+  local condition = vim.fn.input('Condition: ')
+  -- if condition == '' then condition = nil end
+
+  local hit_condition = vim.fn.input('Hit condition (optional): ')
+  -- if hit_condition == '' then hit_condition = nil end
+
+  dap.toggle_breakpoint(condition, hit_condition)
+end, { desc = 'Toggle conditional breakpoint' })
 map('n', '<leader>dui', require('dapui').toggle, { desc = "Toggle DAP UI" })
 map('n', '<C-f>', require('dapui').eval, { desc = "DAP Eval Float", remap = true })
 
@@ -176,4 +185,10 @@ map("n", "<leader>ts", neotest.summary.toggle, { desc = "Toggle neotest summary"
 
 -- map({ "n", "i", "v" }, "<C-s>", "<cmd> w <cr>")
 
--- Peek definition
+-- Scratch buffers
+local snacks = require("snacks")
+map("n", "<leader>.", function() snacks.scratch() end, { desc = "Toggle Scratch Buffer" })
+map("n", "<leader>S", snacks.scratch.select, { desc = "Select Scratch Buffer" })
+
+-- Lazygit
+map("n", "<leader>lg", '<cmd>LazyGitCurrentFile<cr>', { desc = "Open lazygit window" })

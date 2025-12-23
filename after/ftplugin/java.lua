@@ -5,8 +5,9 @@ local jdtls_dap = require("jdtls.dap")
 local jdtls_setup = require("jdtls.setup")
 local home = os.getenv("HOME")
 
-local root_markers = { ".git", "mvnw", "gradlew", "pom.xml", "build.gradle", "Config" }
-local root_dir = jdtls_setup.find_root(root_markers)
+-- local root_markers = { ".git", "mvnw", "gradlew", "pom.xml", "build.gradle", "Config" }
+-- local root_dir = jdtls_setup.find_root(root_markers)
+local root_dir = jdtls_setup.find_root({ "packageInfo" }, "Config")
 
 local bemol_dir = vim.fs.find({ ".bemol" }, { upward = true, type = "directory" })[1]
 local project_name = vim.fn.fnamemodify(bemol_dir, ":h:s?/??:gs?/?.?") .. "." .. vim.fn.fnamemodify(root_dir, ":p:h:t")
@@ -36,6 +37,22 @@ local bundles = {
 }
 
 vim.list_extend(bundles, vim.split(vim.fn.glob(path_to_jtest .. "/*.jar", true), "\n"))
+
+-- Init Bemol
+local ws_folders_jdtls = {}
+-- local ws_folders_lsp = {}
+if bemol_dir then
+    local file = io.open(bemol_dir .. "/ws_root_folders", "r")
+    if file then
+        for line in file:lines() do
+            table.insert(ws_folders_jdtls, "file://" .. line)
+            -- table.insert(ws_folders_lsp, line)
+        end
+        file:close()
+    else
+        print("Could not find bemol workspace file")
+    end
+end
 
 -- LSP settings for Java.
 local on_attach = function(_, bufnr)
@@ -69,7 +86,8 @@ local capabilities = {
 local config = {
     flags = {
         allow_incremental_sync = true,
-    }
+    },
+    root_dir = root_dir
 }
 
 local corretto_17 = "/usr/lib/jvm/java-17-amazon-corretto"
@@ -215,24 +233,22 @@ config.settings = {
 config.on_attach = on_attach
 config.capabilities = capabilities
 config.on_init = function(client, _)
-    client.notify('workspace/didChangeConfiguration', { settings = config.settings })
-
-    -- Init Bemol
-    local ws_folders_lsp = {}
-    if bemol_dir then
-        local file = io.open(bemol_dir .. "/ws_root_folders", "r")
-        if file then
-            for line in file:lines() do
-                table.insert(ws_folders_lsp, line)
-            end
-            file:close()
-        end
-    end
-
-    for _, line in ipairs(ws_folders_lsp) do
-        print("Adding workspace folder: " .. line)
-        vim.lsp.buf.add_workspace_folder(line)
-    end
+    -- local ws_folders_lsp = {}
+    -- if bemol_dir then
+    --     local file = io.open(bemol_dir .. "/ws_root_folders", "r")
+    --     if file then
+    --         for line in file:lines() do
+    --             table.insert(ws_folders_lsp, line)
+    --         end
+    --         file:close()
+    --     else
+    --         print("Could not find bemol workspace file")
+    --     end
+    -- end
+    -- for _, line in ipairs(ws_folders_lsp) do
+    --     vim.lsp.buf.add_workspace_folder(line)
+    -- end
+    -- client.notify('workspace/didChangeConfiguration', { settings = config.settings })
 end
 
 local extendedClientCapabilities = require 'jdtls'.extendedClientCapabilities
@@ -241,6 +257,7 @@ extendedClientCapabilities.resolveAdditionalTextEditsSupport = true
 config.init_options = {
     bundles = bundles,
     extendedClientCapabilities = extendedClientCapabilities,
+    workspaceFolders = ws_folders_jdtls
 }
 
 -- Start Server
@@ -271,7 +288,7 @@ map('n', '<leader>jb', '<Cmd>JdtCompile<CR>',
 -- Test keymaps
 local test_config = {
     vmArgs = "-ea -javaagent:/home/ilindmit/.jmockit.jar -Dmagnolio.islocalfleet=true",
-    javaExec = "/usr/lib/jvm/java-17-amazon-corretto.x86_64/bin/java"
+    javaExec = "/usr/lib/jvm/java-21-amazon-corretto/bin/java"
 }
 
 map('n', '<leader>dc', function()
@@ -284,3 +301,65 @@ map('n', '<leader>dt', function()
         config_overrides = test_config
     })
 end, { desc = "Debug Nearest Method (DAP)", remap = true })
+
+-- Workspace sync command
+vim.api.nvim_create_user_command('JdtSyncWorkspace', function()
+    local function log_error(step, err)
+        vim.notify("JdtSyncWorkspace failed at " .. step .. ": " .. tostring(err), vim.log.levels.ERROR)
+    end
+
+    if not bemol_dir then
+        log_error("initialization", "No .bemol directory found")
+        return
+    end
+
+    local brazil_root = vim.fn.fnamemodify(bemol_dir, ":h")
+
+    vim.notify("Starting workspace sync...", vim.log.levels.INFO)
+
+    -- Remove .bemol directory
+    vim.notify("Removing .bemol directory...", vim.log.levels.INFO)
+    vim.fn.jobstart("rm -rf " .. vim.fn.shellescape(bemol_dir), {
+        on_exit = function(_, code)
+            if code ~= 0 then
+                log_error("removing .bemol", "Exit code: " .. code)
+                return
+            end
+
+            -- Stop JDTLS clients
+            vim.notify("Stopping jdtls clients...", vim.log.levels.INFO)
+            for _, client in pairs(vim.lsp.get_clients({ name = "jdtls" })) do
+                client.stop()
+            end
+
+
+            local ws_dir = home .. "/.cache/jdtls/workspaces/" .. project_name
+            vim.fn.jobstart("rm -rf " .. vim.fn.shellescape(ws_dir), {
+                on_exit = function(_, c)
+                    if (c ~= 0) then
+                        log_error("Clearing jdtls cache", "Exit code: " .. c)
+                        return
+                    end
+                end
+            })
+
+            -- Run bemol
+            vim.notify("Running bemol...", vim.log.levels.INFO)
+            vim.fn.jobstart("bemol", {
+                cwd = brazil_root,
+                on_exit = function(_, bemol_code)
+                    if bemol_code ~= 0 then
+                        log_error("running bemol", "Exit code: " .. bemol_code)
+                        return
+                    end
+
+                    vim.defer_fn(function()
+                        vim.notify("Restarting jdtls...", vim.log.levels.INFO)
+                        require('jdtls').start_or_attach(config)
+                        vim.notify("Workspace sync completed", vim.log.levels.INFO)
+                    end, 1000)
+                end
+            })
+        end
+    })
+end, { desc = "Sync workspace by removing .bemol, running bemol, and restarting jdtls" })
