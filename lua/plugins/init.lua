@@ -5,18 +5,26 @@ return {
     --     opts = require "configs.conform",
     -- },
     {
-        "neovim/nvim-lspconfig",
-        config = function()
-            require "configs.lspconfig"
-        end,
-    },
-    {
         "nvim-treesitter/nvim-treesitter",
         opts = {
             ensure_installed = {
                 "vim", "lua", "vimdoc",
                 "html", "css"
             },
+        },
+    },
+    {
+      "neovim/nvim-lspconfig",
+       config = function()
+          require "configs.lspconfig"
+       end,
+    },
+    {
+        "mason-org/mason-lspconfig.nvim",
+        opts = {},
+        dependencies = {
+            { "mason-org/mason.nvim", opts = {} },
+            "neovim/nvim-lspconfig",
         },
     },
     {
@@ -58,21 +66,9 @@ return {
         lazy = false
     },
     {
-        'gorbit99/codewindow.nvim',
-        config = function()
-            local codewindow = require('codewindow')
-            codewindow.setup({
-                -- auto_enable = true,
-                minimap_width = 15,
-            })
-            codewindow.apply_default_keybinds()
-        end,
-        lazy = false
-    },
-    {
-        'mrcjkb/rustaceanvim',
-        version = '^5', -- Recommended
-        lazy = false,   -- This plugin is already lazy
+      'mrcjkb/rustaceanvim',
+      version = '^7', -- Recommended
+      lazy = false, -- This plugin is already lazy
     },
     {
         'rmagatti/auto-session',
@@ -120,8 +116,7 @@ return {
         }
     },
     {
-        "ggandor/leap.nvim",
-        lazy = false
+      url = "https://codeberg.org/andyg/leap.nvim",
     },
     {
         "ThePrimeagen/harpoon",
