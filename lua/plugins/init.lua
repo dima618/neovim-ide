@@ -13,6 +13,14 @@ return {
             },
         },
     },
+    -- {
+    --     "mason-org/mason-lspconfig.nvim",
+    --     opts = {},
+    --     dependencies = {
+    --         { "mason-org/mason.nvim", opts = {} },
+    --         "neovim/nvim-lspconfig",
+    --     },
+    -- },
     {
       "neovim/nvim-lspconfig",
        config = function()
@@ -116,7 +124,8 @@ return {
         }
     },
     {
-      url = "https://codeberg.org/andyg/leap.nvim",
+        url = "https://codeberg.org/andyg/leap.nvim",
+        lazy = false
     },
     {
         "ThePrimeagen/harpoon",

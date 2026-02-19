@@ -77,19 +77,34 @@ vim.g.rustaceanvim = function()
     }
 end
 
--- vim.api.nvim_create_autocmd("LspAttach", {
---     group = vim.api.nvim_create_augroup("lsp", { clear = true }),
---     callback = function(args)
---         vim.api.nvim_create_autocmd("BufWritePre", {
---             buffer = args.buf,
---             callback = function(opts)
---                 if vim.bo[opts.buf].filetype ~= 'java' then
---                     vim.lsp.buf.format { async = false, id = args.data.client_id }
---                 end
---             end,
---         })
---     end
--- })
+vim.api.nvim_create_autocmd("LspAttach", {
+    group = vim.api.nvim_create_augroup("lsp", { clear = true }),
+    callback = function(args)
+        -- vim.api.nvim_create_autocmd("BufWritePre", {
+        --     buffer = args.buf,
+        --     callback = function(opts)
+        --         if vim.bo[opts.buf].filetype ~= 'java' then
+        --             vim.lsp.buf.format { async = false, id = args.data.client_id }
+        --         end
+        --     end,
+        -- })
+
+        -- Enable highlighting of symbol under cursor
+        vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
+            buffer = args.buf,
+            callback = function()
+                vim.lsp.buf.document_highlight()
+            end,
+        })
+
+        vim.api.nvim_create_autocmd({ 'CursorMoved', 'CursorMovedI' }, {
+            buffer = args.buf,
+            callback = function()
+                vim.lsp.buf.clear_references()
+            end,
+        })
+    end
+})
 
 vim.api.nvim_create_autocmd("BufEnter", {
   pattern = "*",

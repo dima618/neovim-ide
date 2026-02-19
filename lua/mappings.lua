@@ -53,6 +53,9 @@ map('n', '];', dropbar_api.select_next_context, { desc = 'Select next context' }
 
 -- DAP keymaps
 local dap = require('dap')
+map('n', '<F2>', dap.run_last, { desc = 'DAP - Run Last' })
+map('n', '<F3>', dap.restart, { desc = 'DAP - Restart' })
+map('n', '<F4>', dap.terminate, { desc = 'DAP - Stop' })
 map('n', '<F5>', dap.continue, { desc = 'DAP - Continue' })
 map('n', '<F6>', dap.step_over, { desc = 'DAP - Step Over' })
 map('n', '<F7>', dap.step_into, { desc = 'DAP - Step Into' })
@@ -68,7 +71,7 @@ map('n', '<space>tcb', function()
   dap.toggle_breakpoint(condition, hit_condition)
 end, { desc = 'Toggle conditional breakpoint' })
 map('n', '<leader>dui', require('dapui').toggle, { desc = "Toggle DAP UI" })
-map('n', '<C-f>', require('dapui').eval, { desc = "DAP Eval Float", remap = true })
+map({'n', 'v'}, '<C-f>', require('dapui').eval, { desc = "DAP Eval Float", remap = true })
 
 -- Tmux navigator remaps
 map('n', '<C-h>', '<cmd> TmuxNavigateLeft <cr>', { desc = "Window Left", remap = true })
@@ -192,3 +195,8 @@ map("n", "<leader>S", snacks.scratch.select, { desc = "Select Scratch Buffer" })
 
 -- Lazygit
 map("n", "<leader>lg", '<cmd>LazyGitCurrentFile<cr>', { desc = "Open lazygit window" })
+
+-- CodeCompanion
+map({ "n", "v" }, "<leader>ccc", "<cmd>CodeCompanionChat<cr>", { desc = "CodeCompanion Chat" })
+map({ "n", "v" }, "<leader>cca", "<cmd>CodeCompanionActions<cr>", { desc = "CodeCompanion Actions" })
+map("v", "<leader>cci", "<cmd>CodeCompanion<cr>", { desc = "CodeCompanion Inline" })

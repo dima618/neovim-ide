@@ -55,7 +55,7 @@ if bemol_dir then
 end
 
 -- LSP settings for Java.
-local on_attach = function(_, bufnr)
+local on_attach = function(client, bufnr)
     jdtls.setup_dap({ hotcodereplace = "auto" })
     jdtls_dap.setup_dap_main_class_configs()
     jdtls_setup.add_commands()
@@ -232,24 +232,7 @@ config.settings = {
 
 config.on_attach = on_attach
 config.capabilities = capabilities
-config.on_init = function(client, _)
-    -- local ws_folders_lsp = {}
-    -- if bemol_dir then
-    --     local file = io.open(bemol_dir .. "/ws_root_folders", "r")
-    --     if file then
-    --         for line in file:lines() do
-    --             table.insert(ws_folders_lsp, line)
-    --         end
-    --         file:close()
-    --     else
-    --         print("Could not find bemol workspace file")
-    --     end
-    -- end
-    -- for _, line in ipairs(ws_folders_lsp) do
-    --     vim.lsp.buf.add_workspace_folder(line)
-    -- end
-    -- client.notify('workspace/didChangeConfiguration', { settings = config.settings })
-end
+config.on_init = function(_, _) end
 
 local extendedClientCapabilities = require 'jdtls'.extendedClientCapabilities
 extendedClientCapabilities.resolveAdditionalTextEditsSupport = true
@@ -302,6 +285,16 @@ map('n', '<leader>dt', function()
     })
 end, { desc = "Debug Nearest Method (DAP)", remap = true })
 
+-- JDT Build Command
+vim.api.nvim_create_user_command('JdtBuildProject', jdtls.build_projects, { desc = "Rebuild project in the workspace" })
+vim.api.nvim_create_user_command(
+    'JdtRebuildAll',
+    function()
+        jdtls.build_projects({select_mode = 'all'})
+    end,
+    { desc = "Rebuild all projects in the workspace" }
+)
+
 -- Workspace sync command
 vim.api.nvim_create_user_command('JdtSyncWorkspace', function()
     local function log_error(step, err)
@@ -333,8 +326,7 @@ vim.api.nvim_create_user_command('JdtSyncWorkspace', function()
             end
 
 
-            local ws_dir = home .. "/.cache/jdtls/workspaces/" .. project_name
-            vim.fn.jobstart("rm -rf " .. vim.fn.shellescape(ws_dir), {
+            vim.fn.jobstart("rm -rf " .. vim.fn.shellescape(workspace_dir), {
                 on_exit = function(_, c)
                     if (c ~= 0) then
                         log_error("Clearing jdtls cache", "Exit code: " .. c)
