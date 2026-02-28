@@ -13,9 +13,10 @@ local bemol_dir = vim.fs.find({ ".bemol" }, { upward = true, type = "directory" 
 local project_name = vim.fn.fnamemodify(bemol_dir, ":h:s?/??:gs?/?.?") .. "." .. vim.fn.fnamemodify(root_dir, ":p:h:t")
 local workspace_dir = home .. "/.cache/jdtls/workspaces/" .. project_name
 
-local path_to_jdtls = vim.fn.expand("$MASON/share/jdtls")
-local path_to_jdebug = vim.fn.expand("$MASON/share/java-debug-adapter")
-local path_to_jtest = vim.fn.expand("$MASON/share/java-test")
+local mason_path = vim.fn.stdpath("data") .. "/mason"
+local path_to_jdtls = mason_path .. "/share/jdtls"
+local path_to_jdebug = mason_path .. "/share/java-debug-adapter"
+local path_to_jtest = mason_path .. "/share/java-test"
 
 local function get_config_dir()
     if vim.fn.has('linux') == 1 then
@@ -30,13 +31,13 @@ end
 local path_to_config = path_to_jdtls .. get_config_dir()
 local lombok_path = path_to_jdtls .. "/lombok.jar"
 
-local path_to_jar = vim.fn.glob(path_to_jdtls .. "/plugins/org.eclipse.equinox.launcher_*.jar", true)
+local path_to_jar = vim.fn.glob(path_to_jdtls .. "/plugins/org.eclipse.equinox.launcher_*.jar")
 
 local bundles = {
-    vim.fn.glob(path_to_jdebug .. "/com.microsoft.java.debug.plugin-*.jar", true),
+    vim.fn.glob(path_to_jdebug .. "/com.microsoft.java.debug.plugin-*.jar"),
 }
 
-vim.list_extend(bundles, vim.split(vim.fn.glob(path_to_jtest .. "/*.jar", true), "\n"))
+vim.list_extend(bundles, vim.split(vim.fn.glob(path_to_jtest .. "/*.jar"), "\n"))
 
 -- Init Bemol
 local ws_folders_jdtls = {}

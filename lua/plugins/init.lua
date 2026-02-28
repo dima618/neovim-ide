@@ -70,7 +70,9 @@ return {
     },
     {
         "karb94/neoscroll.nvim",
-        opts = {},
+        opts = {
+            performance_mode = true,
+        },
         lazy = false
     },
     {

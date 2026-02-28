@@ -40,6 +40,20 @@ map('n', '<leader>fd', builtin.lsp_definitions, { desc = 'Telescope LSP Definiti
 map('n', '<leader>ftd', builtin.lsp_type_definitions, { desc = 'Telescope LSP Type Definitions' })
 map('n', '<leader>sl', '<cmd> SessionSearch <cr>', { desc = 'Open Telescope Session Lens' })
 map('n', '<leader>fs', builtin.lsp_document_symbols, { desc = 'Telescope Symbols in Buffer' })
+map('n', '<C-n>', function()
+  require('telescope').extensions.file_browser.file_browser({
+    path = vim.fn.expand('%:p:h'),
+    select_buffer = true,
+    initial_mode = 'normal',
+  })
+end, { desc = 'Telescope File Browser' })
+map('n', '<leader>cf', function()
+  require('telescope').extensions.file_browser.file_browser({
+    path = vim.fn.expand('%:p:h'),
+    select_buffer = true,
+    prompt_path = true,
+  })
+end, { desc = 'Create file in current dir' })
 
 map("n", "<leader>pd", function() builtin.lsp_definitions(peek_theme) end, { desc = "Peek Definition" })
 map("n", "<leader>pi", function() builtin.lsp_implementations(peek_theme) end, { desc = "Peek Implementations" })
