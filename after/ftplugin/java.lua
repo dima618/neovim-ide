@@ -91,14 +91,71 @@ local config = {
     root_dir = root_dir
 }
 
-local corretto_17 = "/usr/lib/jvm/java-17-amazon-corretto"
-local corretto_21 = "/usr/lib/jvm/java-21-amazon-corretto"
+local java_cache_path = vim.fn.stdpath("cache") .. "/java_homes.json"
+
+local function find_java(version)
+    local candidates = {}
+    local search_dirs = { "/usr/lib/jvm", "/Library/Java/JavaVirtualMachines" }
+    for _, dir in ipairs(search_dirs) do
+        local handle = vim.loop.fs_scandir(dir)
+        if handle then
+            while true do
+                local name = vim.loop.fs_scandir_next(handle)
+                if not name then break end
+                if name:match("java%-" .. version) or name:match("jdk%-?" .. version) then
+                    local path = dir .. "/" .. name
+                    -- macOS JVMs have Contents/Home
+                    local mac_home = path .. "/Contents/Home"
+                    if vim.fn.isdirectory(mac_home) == 1 then path = mac_home end
+                    if name:match("amazon%-corretto") then
+                        table.insert(candidates, 1, path) -- prefer corretto
+                    else
+                        table.insert(candidates, path)
+                    end
+                end
+            end
+        end
+    end
+    return candidates[1]
+end
+
+local function load_java_homes()
+    local f = io.open(java_cache_path, "r")
+    if f then
+        local data = vim.json.decode(f:read("*a"))
+        f:close()
+        -- validate cached paths still exist
+        for _, v in pairs(data) do
+            if vim.fn.isdirectory(v) == 0 then return nil end
+        end
+        return data
+    end
+end
+
+local function save_java_homes(homes)
+    local f = io.open(java_cache_path, "w")
+    if f then
+        f:write(vim.json.encode(homes))
+        f:close()
+    end
+end
+
+local java_homes = load_java_homes()
+if not java_homes then
+    java_homes = { java_17 = find_java("17"), java_21 = find_java("21") }
+    save_java_homes(java_homes)
+end
+
+local java_17_home = java_homes.java_17
+local java_21_home = java_homes.java_21
+
+if not java_21_home then
+    vim.notify("No Java 21 installation found", vim.log.levels.ERROR)
+    return
+end
 
 config.cmd = {
-    --
-    -- 				-- 💀
-    "/usr/lib/jvm/java-21-amazon-corretto/bin/java", -- or '/path/to/java17_or_newer/bin/java'
-    -- depends on if `java` is in your $PATH env variable and if it points to the right version.
+    java_21_home .. "/bin/java",
 
     "-Declipse.application=org.eclipse.jdt.ls.core.id1",
     "-Dosgi.bundles.defaultStartLevel=4",
@@ -113,21 +170,18 @@ config.cmd = {
     "--add-opens",
     "java.base/java.lang=ALL-UNNAMED",
 
-    -- 💀
     "-jar",
     path_to_jar,
     -- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                                       ^^^^^^^^^^^^^^
     -- Must point to the                                                     Change this to
     -- eclipse.jdt.ls installation                                           the actual version
 
-    -- 💀
     "-configuration",
     path_to_config,
     -- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^        ^^^^^^
     -- Must point to the                      Change to one of `linux`, `win` or `mac`
     -- eclipse.jdt.ls installation            Depending on your system.
 
-    -- 💀
     -- See `data directory configuration` section in the README
     "-data",
     workspace_dir,
@@ -212,16 +266,16 @@ config.settings = {
             useBlocks = true,
         },
         configuration = {
-            runtimes = {
+            runtimes = vim.tbl_filter(function(r) return r.path ~= nil end, {
                 {
                     name = "JavaSE-17",
-                    path = corretto_17
+                    path = java_17_home
                 },
                 {
                     name = "JavaSE-21",
-                    path = corretto_21
+                    path = java_21_home
                 },
-            }
+            })
         }
         -- project = {
         -- 	referencedLibraries = {
@@ -287,6 +341,26 @@ map('n', '<leader>dt', function()
 end, { desc = "Debug Nearest Method (DAP)", remap = true })
 
 -- JDT Build Command
+vim.api.nvim_create_user_command('JdtRefreshJavaInstalls', function()
+    os.remove(java_cache_path)
+    java_homes = { java_17 = find_java("17"), java_21 = find_java("21") }
+    save_java_homes(java_homes)
+    java_17_home = java_homes.java_17
+    java_21_home = java_homes.java_21
+    if not java_21_home then
+        vim.notify("No Java 21 installation found", vim.log.levels.ERROR)
+        return
+    end
+    config.cmd[1] = java_21_home .. "/bin/java"
+    for _, client in pairs(vim.lsp.get_clients({ name = "jdtls" })) do
+        client.stop()
+    end
+    vim.defer_fn(function()
+        require('jdtls').start_or_attach(config)
+        vim.notify("Refreshed Java installs and restarted jdtls", vim.log.levels.INFO)
+    end, 500)
+end, { desc = "Re-discover Java installs and restart jdtls" })
+
 vim.api.nvim_create_user_command('JdtBuildProject', jdtls.build_projects, { desc = "Rebuild project in the workspace" })
 vim.api.nvim_create_user_command(
     'JdtRebuildAll',
@@ -326,33 +400,58 @@ vim.api.nvim_create_user_command('JdtSyncWorkspace', function()
                 client.stop()
             end
 
-
-            vim.fn.jobstart("rm -rf " .. vim.fn.shellescape(workspace_dir), {
-                on_exit = function(_, c)
-                    if (c ~= 0) then
-                        log_error("Clearing jdtls cache", "Exit code: " .. c)
-                        return
-                    end
+            local function wait_for_jdtls_stop(callback)
+                if #vim.lsp.get_clients({ name = "jdtls" }) == 0 then
+                    callback()
+                else
+                    vim.defer_fn(function() wait_for_jdtls_stop(callback) end, 100)
                 end
-            })
+            end
 
-            -- Run bemol
-            vim.notify("Running bemol...", vim.log.levels.INFO)
-            vim.fn.jobstart("bemol", {
-                cwd = brazil_root,
-                on_exit = function(_, bemol_code)
-                    if bemol_code ~= 0 then
-                        log_error("running bemol", "Exit code: " .. bemol_code)
-                        return
+            wait_for_jdtls_stop(function()
+                vim.fn.jobstart("rm -rf " .. vim.fn.shellescape(workspace_dir), {
+                    on_exit = function(_, c)
+                        if c ~= 0 then
+                            log_error("Clearing jdtls cache", "Exit code: " .. c)
+                            return
+                        end
+
+                        -- Run bemol in a bottom split
+                        vim.notify("Running bemol...", vim.log.levels.INFO)
+                        local buf = vim.api.nvim_create_buf(false, true)
+                        vim.cmd('botright split')
+                        local win = vim.api.nvim_get_current_win()
+                        vim.api.nvim_win_set_buf(win, buf)
+                        vim.api.nvim_win_set_height(win, math.floor(vim.o.lines * 0.2))
+                        vim.fn.jobstart("bemol", {
+                            cwd = brazil_root,
+                            stdout_buffered = false,
+                            on_stdout = function(_, data)
+                                if data then
+                                    vim.schedule(function()
+                                        vim.api.nvim_buf_set_lines(buf, -1, -1, false, data)
+                                        if vim.api.nvim_win_is_valid(win) then
+                                            vim.api.nvim_win_set_cursor(win, { vim.api.nvim_buf_line_count(buf), 0 })
+                                        end
+                                    end)
+                                end
+                            end,
+                            on_exit = function(_, bemol_code)
+                                if bemol_code ~= 0 then
+                                    log_error("running bemol", "Exit code: " .. bemol_code)
+                                    return
+                                end
+
+                                vim.schedule(function()
+                                    vim.notify("Restarting jdtls...", vim.log.levels.INFO)
+                                    require('jdtls').start_or_attach(config)
+                                    vim.notify("Workspace sync completed", vim.log.levels.INFO)
+                                end)
+                            end
+                        })
                     end
-
-                    vim.defer_fn(function()
-                        vim.notify("Restarting jdtls...", vim.log.levels.INFO)
-                        require('jdtls').start_or_attach(config)
-                        vim.notify("Workspace sync completed", vim.log.levels.INFO)
-                    end, 1000)
-                end
-            })
+                })
+            end)
         end
     })
 end, { desc = "Sync workspace by removing .bemol, running bemol, and restarting jdtls" })
