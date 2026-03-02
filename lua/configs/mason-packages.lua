@@ -8,6 +8,7 @@ return {
     "codelldb",
     "java-debug-adapter",
     "java-test",
+    "dart-debug-adapter",
 
     -- lsp
     "jdtls", -- Configured in ftplugin/java.lua so need to specify it here.
