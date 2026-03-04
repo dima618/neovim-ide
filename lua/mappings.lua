@@ -45,6 +45,9 @@ map('n', '<C-n>', function()
     path = vim.fn.expand('%:p:h'),
     select_buffer = true,
     initial_mode = 'normal',
+    auto_depth = true,
+    hidden = true,
+    prompt_path = true,
   })
 end, { desc = 'Telescope File Browser' })
 map('n', '<leader>cf', function()
