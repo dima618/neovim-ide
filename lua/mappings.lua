@@ -15,9 +15,10 @@ map("v", "<", "<gv", { silent = true, desc = "Indent" })
 map("n", ";", ":", { desc = "CMD enter command mode" })
 map("i", "jk", "<ESC>")
 
-map("n", "<leader>ca", vim.lsp.buf.code_action, { desc = "LSP Code Action" })
-map("n", "<leader>df", vim.diagnostic.open_float, { desc = "LSP Open Float Diagnostic" })
-map("n", "<leader>rs", vim.lsp.buf.rename, { desc = "LSP Rename Symbol" })
+map("n", "<leader>ca", vim.lsp.buf.code_action, { desc = 'LSP Code Action' })
+map('n', '<leader>df', vim.diagnostic.open_float, { desc = 'LSP Open Float Diagnostic' })
+map("n", "<leader>rs", vim.lsp.buf.rename, { desc = 'LSP Rename Symbol' })
+map("n", "<leader>bp", '<cmd> BufPin <cr>', { desc = 'Pin current buffer' })
 
 -- Telescope keymaps
 local peek_opts = {
@@ -127,6 +128,9 @@ local harpoon = require "harpoon"
 harpoon:setup()
 -- REQUIRED
 
+local redraw = function() vim.cmd.redrawtabline() end
+harpoon:extend({ ADD = redraw, REMOVE = redraw, REORDER = redraw })
+
 local conf = require("telescope.config").values
 
 local make_finder = function()
@@ -195,6 +199,24 @@ map({ "n", "v" }, "<leader>4", function()
   harpoon:list():select(4)
 end)
 
+map("n", "<leader>hr", function()
+  local list = harpoon:list()
+  local cur = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(0), ":.")
+  for i, item in ipairs(list.items) do
+    if item.value == cur then
+      list:remove_at(i)
+      vim.notify("Removed from harpoon", vim.log.levels.INFO)
+      return
+    end
+  end
+  vim.notify("Not in harpoon list", vim.log.levels.WARN)
+end, { desc = "Remove current buffer from harpoon" })
+
+map("n", "<leader>hc", function()
+  harpoon:list():clear()
+  vim.notify("Harpoon list cleared", vim.log.levels.INFO)
+end, { desc = "Clear harpoon list" })
+
 -- neotest
 local neotest = require "neotest"
 map("n", "<leader>rt", function()
@@ -225,3 +247,4 @@ map("n", "<leader>lg", "<cmd>LazyGitCurrentFile<cr>", { desc = "Open lazygit win
 map({ "n", "v" }, "<leader>ccc", "<cmd>CodeCompanionChat<cr>", { desc = "CodeCompanion Chat" })
 map({ "n", "v" }, "<leader>cca", "<cmd>CodeCompanionActions<cr>", { desc = "CodeCompanion Actions" })
 map("v", "<leader>cci", "<cmd>CodeCompanion<cr>", { desc = "CodeCompanion Inline" })
+map("n", "<leader>ccr", function() require("plugins.codecompanion.smart-refactor").run() end, { desc = "Smart Refactor" })

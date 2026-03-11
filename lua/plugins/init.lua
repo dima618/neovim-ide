@@ -56,6 +56,22 @@ return {
     "nvim-telescope/telescope.nvim",
     opts = function(_, conf)
       conf.defaults.path_display = { "filename_first", "truncate" }
+      conf.defaults.file_ignore_patterns = { "^.git/" }
+      conf.defaults.vimgrep_arguments = {
+        "rg",
+        "--color=never",
+        "--no-heading",
+        "--with-filename",
+        "--line-number",
+        "--column",
+        "--smart-case",
+        "--hidden",
+      }
+      conf.pickers = {
+        find_files = {
+          hidden = true,
+        },
+      }
       return conf
     end,
   },
@@ -94,11 +110,8 @@ return {
     },
     config = function()
       require("auto-session").setup {
-        -- post_restore_cmds = {
-        --   function()
-        --     require("harpoon").setup()
-        --   end
-        -- }
+        pre_save_cmds = { function() require("scripts").save_pinned() end },
+        post_restore_cmds = { function() require("scripts").load_pinned() end },
       }
     end,
   },

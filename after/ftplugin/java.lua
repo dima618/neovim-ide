@@ -455,3 +455,44 @@ vim.api.nvim_create_user_command('JdtSyncWorkspace', function()
         end
     })
 end, { desc = "Sync workspace by removing .bemol, running bemol, and restarting jdtls" })
+
+-- Split string on Enter: closes current string, adds `+ ""` on next line with cursor inside
+local function in_java_string()
+    local col = vim.fn.col(".") - 1
+    local before = vim.fn.getline("."):sub(1, col)
+    local in_str = false
+    local i = 1
+    while i <= #before do
+        if before:sub(i, i) == "\\" then
+            i = i + 2
+        elseif before:sub(i, i) == '"' then
+            in_str = not in_str
+            i = i + 1
+        else
+            i = i + 1
+        end
+    end
+    return in_str
+end
+
+-- Override cmp's <CR> to split strings, falling back to cmp's normal confirm/fallback chain
+local cmp = require("cmp")
+local luasnip = require("luasnip")
+cmp.setup.buffer({
+    mapping = {
+        ["<CR>"] = cmp.mapping(function(fallback)
+            if in_java_string() then
+                local keys = vim.api.nvim_replace_termcodes('"\r+ "', true, false, true)
+                vim.api.nvim_feedkeys(keys, "n", false)
+            elseif cmp.visible() then
+                if luasnip.expandable() then
+                    luasnip.expand()
+                else
+                    cmp.confirm({ select = true })
+                end
+            else
+                fallback()
+            end
+        end),
+    },
+})
