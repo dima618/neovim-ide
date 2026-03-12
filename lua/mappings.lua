@@ -190,18 +190,9 @@ map({ "n", "v" }, "<leader>ha", function()
   harpoon:list():add()
 end, { desc = "Add to harpoon list" })
 
-map({ "n", "v" }, "<leader>1", function()
-  harpoon:list():select(1)
-end)
-map({ "n", "v" }, "<leader>2", function()
-  harpoon:list():select(2)
-end)
-map({ "n", "v" }, "<leader>3", function()
-  harpoon:list():select(3)
-end)
-map({ "n", "v" }, "<leader>4", function()
-  harpoon:list():select(4)
-end)
+for i = 1, 9 do
+  map({ "n", "v" }, "<leader>" .. i, function() harpoon:list():select(i) end)
+end
 
 map("n", "<leader>hr", function()
   local list = harpoon:list()
