@@ -178,4 +178,8 @@ vim.api.nvim_buf_create_user_command(0, "Format", function(_)
     vim.lsp.buf.format()
 end, { desc = "Format current buffer with LSP" })
 
-return { save_pinned = save_pinned, load_pinned = load_pinned, sort_bufs_by_harpoon = sort_bufs_by_harpoon }
+local function pin_current_buf()
+  pinned_bufs[vim.api.nvim_get_current_buf()] = true
+end
+
+return { save_pinned = save_pinned, load_pinned = load_pinned, sort_bufs_by_harpoon = sort_bufs_by_harpoon, pin_current_buf = pin_current_buf }

@@ -128,8 +128,12 @@ local harpoon = require "harpoon"
 harpoon:setup()
 -- REQUIRED
 
-local redraw = function() require("scripts").sort_bufs_by_harpoon() end
-harpoon:extend({ ADD = redraw, REMOVE = redraw, REORDER = redraw })
+local function on_harpoon_change()
+  local scripts = require("scripts")
+  scripts.pin_current_buf()
+  scripts.sort_bufs_by_harpoon()
+end
+harpoon:extend({ ADD = on_harpoon_change, REMOVE = on_harpoon_change, REORDER = on_harpoon_change })
 
 local conf = require("telescope.config").values
 
