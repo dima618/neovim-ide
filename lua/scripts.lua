@@ -1,3 +1,5 @@
+-- VSCode-like preview buffers: auto-close buffers you only viewed, keep ones you edited
+local pinned_bufs = {}
 
 -- Harpoon index in tabufline: override style_buf to show harpoon number
 local tb_utils = require("nvchad.tabufline.utils")
@@ -16,6 +18,48 @@ tb_utils.style_buf = function(nr, i, w)
   end
   return result
 end
+
+-- Sort harpoon buffers to the front of the tabline
+local function sort_bufs_by_harpoon()
+  local ok, harpoon = pcall(require, "harpoon")
+  if not ok then return end
+  local bufs = vim.t.bufs or {}
+  if #bufs <= 1 then return end
+
+  local harpoon_idx = {}
+  for idx, item in ipairs(harpoon:list().items) do
+    harpoon_idx[item.value] = idx
+  end
+
+  table.sort(bufs, function(a, b)
+    local pa = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(a), ":.")
+    local pb = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(b), ":.")
+    local ha = harpoon_idx[pa]
+    local hb = harpoon_idx[pb]
+    if ha and hb then return ha < hb end
+    if ha then return true end
+    if hb then return false end
+    return false
+  end)
+
+  vim.t.bufs = bufs
+  vim.cmd.redrawtabline()
+end
+
+vim.api.nvim_create_autocmd("BufEnter", {
+  callback = function(args)
+    local ok, harpoon = pcall(require, "harpoon")
+    if not ok then return end
+    local path = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(args.buf), ":.")
+    for _, item in ipairs(harpoon:list().items) do
+      if item.value == path then
+        pinned_bufs[args.buf] = true
+        sort_bufs_by_harpoon()
+        return
+      end
+    end
+  end,
+})
 
 -- Close all buffers except the current one
 vim.api.nvim_create_user_command('BufClose',
@@ -48,9 +92,6 @@ vim.api.nvim_create_autocmd({ "BufWritePre" }, {
   pattern = { "*" },
   command = [[%s/\s\+$//e]],
 })
-
--- VSCode-like preview buffers: auto-close buffers you only viewed, keep ones you edited
-local pinned_bufs = {}
 
 local function pinned_file()
   local session_dir = vim.fn.stdpath("data") .. "/sessions/"
@@ -107,11 +148,12 @@ vim.api.nvim_create_autocmd("BufLeave", {
     vim.defer_fn(function()
       if not vim.api.nvim_buf_is_valid(buf) then return end
       if buf == vim.api.nvim_get_current_buf() then return end
-      if vim.bo[buf].modified then return end
       if vim.bo[buf].buftype ~= "" then return end
       for _, win in ipairs(vim.api.nvim_list_wins()) do
         if vim.api.nvim_win_get_buf(win) == buf then return end
       end
+      local is_jdt = vim.api.nvim_buf_get_name(buf):match("^jdt://")
+      if not is_jdt and vim.bo[buf].modified then return end
       vim.api.nvim_set_option_value("buflisted", false, { buf = buf })
     end, 0)
   end,
@@ -136,4 +178,4 @@ vim.api.nvim_buf_create_user_command(0, "Format", function(_)
     vim.lsp.buf.format()
 end, { desc = "Format current buffer with LSP" })
 
-return { save_pinned = save_pinned, load_pinned = load_pinned }
+return { save_pinned = save_pinned, load_pinned = load_pinned, sort_bufs_by_harpoon = sort_bufs_by_harpoon }

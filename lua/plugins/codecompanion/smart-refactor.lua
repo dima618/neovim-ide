@@ -1,22 +1,13 @@
 local M = {}
 
-function M.run()
-  local params = vim.lsp.util.make_position_params()
-  local word = vim.fn.expand("<cword>")
-
-  vim.lsp.buf_request(0, "textDocument/references", params, function(err, refs)
-    if err or not refs or #refs == 0 then
-      vim.notify("No references found for: " .. word, vim.log.levels.WARN)
-      return
-    end
-
-    local seen = {}
-    local context_parts = {}
-
-    for _, ref in ipairs(refs) do
-      local uri = ref.uri or ref.targetUri
+local function collect_snippets(locations, seen)
+  local parts = {}
+  for _, loc in ipairs(locations) do
+    local uri = loc.uri or loc.targetUri
+    local range = loc.range or loc.targetSelectionRange
+    if uri and range then
       local path = vim.uri_to_fname(uri)
-      local lnum = ref.range.start.line
+      local lnum = range.start.line
       local key = path .. ":" .. lnum
       if not seen[key] then
         seen[key] = true
@@ -29,39 +20,88 @@ function M.run()
             snippet[#snippet + 1] = lines[i + 1]
           end
           local rel = vim.fn.fnamemodify(path, ":.")
-          context_parts[#context_parts + 1] = string.format(
+          parts[#parts + 1] = string.format(
             "### %s (line %d)\n```\n%s\n```", rel, lnum + 1, table.concat(snippet, "\n")
           )
         end
       end
     end
+  end
+  return parts
+end
 
+function M.run()
+  local bufnr = vim.api.nvim_get_current_buf()
+  local win = vim.api.nvim_get_current_win()
+  local params = vim.lsp.util.make_position_params(win, nil)
+  local word = vim.fn.expand("<cword>")
+
+  local ref_params = vim.deepcopy(params)
+  ref_params.context = { includeDeclaration = true }
+
+  local pending = 2
+  local all_refs = {}
+  local all_impls = {}
+  local seen = {}
+
+  local function on_done()
+    pending = pending - 1
+    if pending > 0 then return end
+
+    local ref_parts = collect_snippets(all_refs, seen)
+    local impl_parts = collect_snippets(all_impls, seen)
+
+    if #ref_parts == 0 and #impl_parts == 0 then
+      vim.notify("No references or implementations found for: " .. word, vim.log.levels.WARN)
+      return
+    end
+
+    local cur_line = params.position.line
     local cur_lines = vim.api.nvim_buf_get_lines(
-      0, math.max(0, params.position.line - 10), params.position.line + 30, false
+      bufnr, math.max(0, cur_line - 10), cur_line + 30, false
     )
-    local cur_file = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(0), ":.")
+    local cur_file = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(bufnr), ":.")
+
+    local sections = {}
+    if #ref_parts > 0 then
+      sections[#sections + 1] = "## References / Callers\n" .. table.concat(ref_parts, "\n\n")
+    end
+    if #impl_parts > 0 then
+      sections[#sections + 1] = "## Implementations / Overrides\n" .. table.concat(impl_parts, "\n\n")
+    end
 
     local prompt = string.format(
-      [[I've updated a function signature. Please update all callers and overrides to match the new signature.
+      [[I've updated a function signature. Please update all callers, implementations, and overrides to match the new signature.
 
 ## Updated function in %s (around line %d)
 ```
 %s
 ```
 
-## References to update
 %s
 
-Update each reference to match the new function signature. Show the complete changes needed for each file.]],
+Update each location to match the new function signature. Show the complete changes needed for each file.]],
       cur_file,
-      params.position.line + 1,
+      cur_line + 1,
       table.concat(cur_lines, "\n"),
-      table.concat(context_parts, "\n\n")
+      table.concat(sections, "\n\n")
     )
 
     vim.schedule(function()
       require("codecompanion").chat({ content = prompt })
     end)
+  end
+
+  -- Get references
+  vim.lsp.buf_request(bufnr, "textDocument/references", ref_params, function(err, result)
+    all_refs = (not err and result) or {}
+    on_done()
+  end)
+
+  -- Get implementations
+  vim.lsp.buf_request(bufnr, "textDocument/implementation", params, function(err, result)
+    all_impls = (not err and result) or {}
+    on_done()
   end)
 end
 

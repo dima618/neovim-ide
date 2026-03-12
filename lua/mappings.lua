@@ -128,7 +128,7 @@ local harpoon = require "harpoon"
 harpoon:setup()
 -- REQUIRED
 
-local redraw = function() vim.cmd.redrawtabline() end
+local redraw = function() require("scripts").sort_bufs_by_harpoon() end
 harpoon:extend({ ADD = redraw, REMOVE = redraw, REORDER = redraw })
 
 local conf = require("telescope.config").values

@@ -111,7 +111,12 @@ return {
     config = function()
       require("auto-session").setup {
         pre_save_cmds = { function() require("scripts").save_pinned() end },
-        post_restore_cmds = { function() require("scripts").load_pinned() end },
+        post_restore_cmds = {
+          function()
+            require("scripts").load_pinned()
+            require("scripts").sort_bufs_by_harpoon()
+          end,
+        },
       }
     end,
   },
