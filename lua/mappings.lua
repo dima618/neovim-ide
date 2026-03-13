@@ -4,6 +4,8 @@ require "nvchad.mappings"
 local builtin = require "telescope.builtin"
 local map = vim.keymap.set
 
+vim.keymap.del("n", "<leader>h")
+
 -- nvim remaps
 map("n", "<C-/>", "gcc", { desc = "toggle comment", remap = true })
 map("v", "<C-/>", "gc", { desc = "toggle comment", remap = true })
@@ -133,7 +135,12 @@ local function on_harpoon_change()
   scripts.pin_current_buf()
   scripts.sort_bufs_by_harpoon()
 end
-harpoon:extend({ ADD = on_harpoon_change, REMOVE = on_harpoon_change, REORDER = on_harpoon_change })
+harpoon:extend({
+    ADD = on_harpoon_change,
+    REMOVE = on_harpoon_change,
+    REORDER = on_harpoon_change,
+    REPLACE = on_harpoon_change
+})
 
 local conf = require("telescope.config").values
 
@@ -155,7 +162,7 @@ local function toggle_telescope(harpoon_files)
 
   require("telescope.pickers")
     .new({}, {
-      prompt_title = "Harpoon",
+      prompt_title = "Harpoon  (dd to remove)",
       finder = require("telescope.finders").new_table {
         results = file_paths,
       },
@@ -184,7 +191,7 @@ end
 map({ "n", "v" }, "<leader>hl", function()
   toggle_telescope(harpoon:list())
 end, { desc = "Open harpoon window", remap = true })
-map("n", "<leader>hm", harpoon.ui.toggle_quick_menu, { desc = "Toggle harpoon quick menu" })
+map("n", "<leader>hm", function() harpoon.ui:toggle_quick_menu(harpoon:list()) end, { desc = "Toggle harpoon quick menu" })
 
 map({ "n", "v" }, "<leader>ha", function()
   harpoon:list():add()
@@ -192,6 +199,12 @@ end, { desc = "Add to harpoon list" })
 
 for i = 1, 9 do
   map({ "n", "v" }, "<leader>" .. i, function() harpoon:list():select(i) end)
+  map("n", "<leader>h" .. i, function()
+    local list = harpoon:list()
+    local item = { value = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(0), ":."), context = { row = 1, col = 0 } }
+    list:replace_at(i, item)
+    vim.notify("Harpoon [" .. i .. "] = " .. item.value, vim.log.levels.INFO)
+  end, { desc = "Set harpoon slot " .. i })
 end
 
 map("n", "<leader>hr", function()
@@ -225,8 +238,6 @@ map("n", "<leader>rdt", function()
 end, { desc = "Debug test" })
 map("n", "<leader>st", neotest.run.stop, { desc = "Stop test" })
 map("n", "<leader>ts", neotest.summary.toggle, { desc = "Toggle neotest summary" })
-
--- map({ "n", "i", "v" }, "<C-s>", "<cmd> w <cr>")
 
 -- Scratch buffers
 local snacks = require "snacks"

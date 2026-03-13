@@ -70,11 +70,12 @@ vim.api.nvim_create_autocmd("BufLeave", {
     vim.defer_fn(function()
       if not vim.api.nvim_buf_is_valid(buf) then return end
       if buf == vim.api.nvim_get_current_buf() then return end
-      if vim.bo[buf].buftype ~= "" then return end
+      local name = vim.api.nvim_buf_get_name(buf)
+      local is_jdt = name:match("^jdt://")
+      if not is_jdt and vim.bo[buf].buftype ~= "" then return end
       for _, win in ipairs(vim.api.nvim_list_wins()) do
         if vim.api.nvim_win_get_buf(win) == buf then return end
       end
-      local is_jdt = vim.api.nvim_buf_get_name(buf):match("^jdt://")
       if not is_jdt and vim.bo[buf].modified then return end
       vim.api.nvim_set_option_value("buflisted", false, { buf = buf })
     end, 0)
