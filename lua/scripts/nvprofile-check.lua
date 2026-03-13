@@ -1,24 +1,32 @@
 -- Check if .nvprofile is sourced in shell profile, offer to add it if not
 vim.defer_fn(function()
-  local nvprofile = vim.fn.stdpath("config") .. "/.nvprofile"
-  local bin_dir = vim.fn.stdpath("config") .. "/bin"
+  local nvprofile = vim.fn.stdpath "config" .. "/.nvprofile"
+  local bin_dir = vim.fn.stdpath "config" .. "/bin"
   local shell = vim.env.SHELL or ""
-  local is_zsh = shell:find("zsh") ~= nil
+  local is_zsh = shell:find "zsh" ~= nil
   local profile = vim.fn.expand(is_zsh and "~/.zprofile" or "~/.bash_profile")
 
   -- Check PATH first, then check if already in profile file
-  if vim.env.PATH:find(bin_dir, 1, true) then return end
+  if vim.env.PATH:find(bin_dir, 1, true) then
+    return
+  end
   if vim.fn.filereadable(profile) == 1 then
     for _, line in ipairs(vim.fn.readfile(profile)) do
-      if line:find(".nvprofile", 1, true) then return end
+      if line:find(".nvprofile", 1, true) then
+        return
+      end
     end
   end
 
   vim.ui.select({ "Yes", "No" }, {
     prompt = ".nvprofile is not sourced in your shell profile. Add it?",
   }, function(choice)
-    if choice ~= "Yes" then return end
-    local source_line = 'source "' .. nvprofile .. '"'
+    if choice ~= "Yes" then
+      return
+    end
+    local home = vim.env.HOME or ""
+    local portable_path = nvprofile:gsub("^" .. vim.pesc(home), "$HOME")
+    local source_line = 'source "' .. portable_path .. '"'
     local lines = vim.fn.readfile(profile)
 
     -- Insert after the source rc block, or append if not found
@@ -73,7 +81,13 @@ vim.defer_fn(function()
     end
     vim.api.nvim_win_set_cursor(win, { insert_at, 0 })
 
-    -- Write to the actual profile on save, close on quit
+    -- Close and discard on q
+    vim.keymap.set("n", "q", function()
+      vim.api.nvim_win_close(win, true)
+      vim.api.nvim_buf_delete(buf, { force = true })
+    end, { buffer = buf })
+
+    -- Write to the actual profile on save
     vim.api.nvim_create_autocmd("BufWriteCmd", {
       buffer = buf,
       once = true,

@@ -17,12 +17,12 @@ return {
     opts = { style = "percent", output_extension = "auto" },
     lazy = false,
     init = function()
-      local deps = { "jupytext", "pynvim" }
-      local missing = vim.tbl_filter(function(pkg)
-        return vim.fn.system("pip show " .. pkg .. " 2>/dev/null"):find("Name:") == nil
-      end, deps)
-      if #missing > 0 then
-        vim.defer_fn(function()
+      vim.defer_fn(function()
+        local deps = { "jupytext", "pynvim" }
+        local missing = vim.tbl_filter(function(pkg)
+          return vim.fn.system("pip show " .. pkg .. " 2>/dev/null"):find("Name:") == nil
+        end, deps)
+        if #missing > 0 then
           vim.ui.select({ "Yes", "No" }, {
             prompt = "Missing pip packages: " .. table.concat(missing, ", ") .. ". Install now?",
           }, function(choice)
@@ -30,8 +30,8 @@ return {
               vim.cmd("!" .. "pip install " .. table.concat(missing, " "))
             end
           end)
-        end, 1000)
-      end
+        end
+      end, 1000)
     end,
   },
 }
