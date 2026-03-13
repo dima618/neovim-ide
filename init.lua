@@ -4,6 +4,9 @@ vim.g.mapleader = " "
 vim.opt.clipboard = "unnamedplus"
 
 require("scripts.nvprofile-check")
+if vim.g.notes_setup then
+  require("scripts.notes-setup")
+end
 
 -- bootstrap lazy and all plugins
 local lazypath = vim.fn.stdpath "data" .. "/lazy/lazy.nvim"

@@ -1,2 +1,6 @@
 #!/bin/sh
-nvim -c "cd $NOTES_DIRECTORY"
+if [ -n "$NOTES_DIRECTORY" ] && [ -d "$NOTES_DIRECTORY" ]; then
+  (cd "$NOTES_DIRECTORY" && nvim)
+else
+  nvim --cmd "lua vim.g.notes_setup = true; vim.g.auto_session_enabled = false"
+fi

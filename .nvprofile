@@ -1,2 +1,5 @@
 # Neovim environment configuration
 export PATH="$HOME/.config/nvim/bin:$PATH"
+
+# Source local overrides (not tracked by git)
+[ -f "$HOME/.config/nvim/.nvprofile.local" ] && source "$HOME/.config/nvim/.nvprofile.local"

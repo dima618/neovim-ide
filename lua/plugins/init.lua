@@ -108,16 +108,15 @@ return {
       suppressed_dirs = { "~/", "~/Projects", "~/Downloads", "/", "~/workplace" },
       -- log_level = 'debug',
     },
-    config = function()
-      require("auto-session").setup {
-        pre_save_cmds = { function() require("scripts").save_pinned() end },
-        post_restore_cmds = {
-          function()
-            require("scripts").load_pinned()
-            require("scripts").sort_bufs_by_harpoon()
-          end,
-        },
+    config = function(_, opts)
+      opts.pre_save_cmds = { function() require("scripts").save_pinned() end }
+      opts.post_restore_cmds = {
+        function()
+          require("scripts").load_pinned()
+          require("scripts").sort_bufs_by_harpoon()
+        end,
       }
+      require("auto-session").setup(opts)
     end,
   },
   {

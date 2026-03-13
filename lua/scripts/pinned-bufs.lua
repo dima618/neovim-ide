@@ -3,9 +3,10 @@ local M = {}
 local pinned_bufs = {}
 
 local function pinned_file()
-  local session_dir = vim.fn.stdpath("data") .. "/sessions/"
+  local pinned_dir = vim.fn.stdpath("data") .. "/pinned/"
+  vim.fn.mkdir(pinned_dir, "p")
   local cwd = vim.fn.getcwd():gsub("[/\\]", "%%")
-  return session_dir .. cwd .. "_pinned.json"
+  return pinned_dir .. cwd .. ".json"
 end
 
 function M.save_pinned()
