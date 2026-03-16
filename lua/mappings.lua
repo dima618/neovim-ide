@@ -249,8 +249,36 @@ map("n", "<leader>S", snacks.scratch.select, { desc = "Select Scratch Buffer" })
 -- Lazygit
 map("n", "<leader>lg", "<cmd>LazyGitCurrentFile<cr>", { desc = "Open lazygit window" })
 
+-- Tab navigation
+for i = 1, 9 do
+  map("n", "<leader>t" .. i, i .. "gt", { desc = "Go to tab " .. i })
+end
+
 -- CodeCompanion
 map({ "n", "v" }, "<leader>ccc", "<cmd>CodeCompanionChat<cr>", { desc = "CodeCompanion Chat" })
 map({ "n", "v" }, "<leader>cca", "<cmd>CodeCompanionActions<cr>", { desc = "CodeCompanion Actions" })
 map("v", "<leader>cci", "<cmd>CodeCompanion<cr>", { desc = "CodeCompanion Inline" })
+map("n", "<leader>cci", "<cmd>CodeCompanion<cr>", { desc = "CodeCompanion Inline" })
 map("n", "<leader>ccr", function() require("plugins.codecompanion.smart-refactor").run() end, { desc = "Smart Refactor" })
+
+-- Auto-add file path context when opening chat with a visual selection
+vim.api.nvim_create_autocmd("User", {
+  pattern = "CodeCompanionChatCreated",
+  callback = function(args)
+    local ctx = _G.codecompanion_current_context
+    if not ctx then return end
+    local bufnr = ctx
+    if not vim.api.nvim_buf_is_valid(bufnr) then return end
+    local name = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(bufnr), ":.")
+    if name == "" then return end
+
+    local chat_buf = args.buf
+    local lines = vim.api.nvim_buf_get_lines(chat_buf, 0, -1, false)
+    -- Prepend file path as context if there's content (visual selection was added)
+    if #lines > 1 or (lines[1] and lines[1] ~= "") then
+      table.insert(lines, 1, "> From: `" .. name .. "`")
+      table.insert(lines, 2, "")
+      vim.api.nvim_buf_set_lines(chat_buf, 0, 0, false, { "> From: `" .. name .. "`", "" })
+    end
+  end,
+})

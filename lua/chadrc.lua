@@ -21,7 +21,13 @@ M.ui = {
     -- transparency = true,
     statusline = {
         theme = "minimal",
-        separator_style = "round"
+        separator_style = "round",
+        order = { "mode", "file", "git", "%=", "lsp_msg", "%=", "ai", "diagnostics", "lsp", "cwd", "cursor" },
+        modules = {
+            ai = function()
+                return require("scripts.ai-statusline").get()
+            end,
+        },
     }
 }
 

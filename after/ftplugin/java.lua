@@ -162,7 +162,7 @@ config.cmd = {
     "-Declipse.product=org.eclipse.jdt.ls.core.product",
     "-Dlog.protocol=true",
     "-Dlog.level=ALL",
-    "-Xmx1g",
+    "-Xmx4g",
     "-javaagent:" .. lombok_path,
     "--add-modules=ALL-SYSTEM",
     "--add-opens",
@@ -324,19 +324,35 @@ map('n', '<leader>ju', '<Cmd>JdtUpdateConfig<CR>',
 map('n', '<leader>jb', '<Cmd>JdtCompile<CR>',
     { desc = "Compile Java Code", buffer = bufnr, nowait = true, remap = false })
 -- Test keymaps
-local test_config = {
-    vmArgs = "-ea -javaagent:/home/ilindmit/.jmockit.jar -Dmagnolio.islocalfleet=true",
-    javaExec = "/usr/lib/jvm/java-21-amazon-corretto/bin/java"
-}
+local function find_log4j_config()
+    return vim.fs.find({ "log4j2-test.xml", "log4j2.xml" }, {
+        upward = true,
+        type = "file",
+        path = vim.fn.expand("%:p:h"),
+        stop = root_dir,
+    })[1]
+end
+
+local function get_test_config()
+    local vm = "-ea -javaagent:/home/ilindmit/.jmockit.jar -Dmagnolio.islocalfleet=true"
+    local log4j = find_log4j_config()
+    if log4j then
+        vm = vm .. " -Dlog4j.configurationFile=file://" .. log4j
+    end
+    return {
+        vmArgs = vm,
+        javaExec = "/usr/lib/jvm/java-21-amazon-corretto/bin/java"
+    }
+end
 
 map('n', '<leader>dc', function()
     require 'jdtls'.test_class({
-        config_overrides = test_config
+        config_overrides = get_test_config()
     })
 end, { desc = "Debug Test Class (DAP)", remap = true })
 map('n', '<leader>dt', function()
     require 'jdtls'.test_nearest_method({
-        config_overrides = test_config
+        config_overrides = get_test_config()
     })
 end, { desc = "Debug Nearest Method (DAP)", remap = true })
 
@@ -372,88 +388,7 @@ vim.api.nvim_create_user_command(
 
 -- Workspace sync command
 vim.api.nvim_create_user_command('JdtSyncWorkspace', function()
-    local function log_error(step, err)
-        vim.notify("JdtSyncWorkspace failed at " .. step .. ": " .. tostring(err), vim.log.levels.ERROR)
-    end
-
-    if not bemol_dir then
-        log_error("initialization", "No .bemol directory found")
-        return
-    end
-
-    local brazil_root = vim.fn.fnamemodify(bemol_dir, ":h")
-
-    vim.notify("Starting workspace sync...", vim.log.levels.INFO)
-
-    -- Remove .bemol directory
-    vim.notify("Removing .bemol directory...", vim.log.levels.INFO)
-    vim.fn.jobstart("rm -rf " .. vim.fn.shellescape(bemol_dir), {
-        on_exit = function(_, code)
-            if code ~= 0 then
-                log_error("removing .bemol", "Exit code: " .. code)
-                return
-            end
-
-            -- Stop JDTLS clients
-            vim.notify("Stopping jdtls clients...", vim.log.levels.INFO)
-            for _, client in pairs(vim.lsp.get_clients({ name = "jdtls" })) do
-                client.stop()
-            end
-
-            local function wait_for_jdtls_stop(callback)
-                if #vim.lsp.get_clients({ name = "jdtls" }) == 0 then
-                    callback()
-                else
-                    vim.defer_fn(function() wait_for_jdtls_stop(callback) end, 100)
-                end
-            end
-
-            wait_for_jdtls_stop(function()
-                vim.fn.jobstart("rm -rf " .. vim.fn.shellescape(workspace_dir), {
-                    on_exit = function(_, c)
-                        if c ~= 0 then
-                            log_error("Clearing jdtls cache", "Exit code: " .. c)
-                            return
-                        end
-
-                        -- Run bemol in a bottom split
-                        vim.notify("Running bemol...", vim.log.levels.INFO)
-                        local buf = vim.api.nvim_create_buf(false, true)
-                        vim.cmd('botright split')
-                        local win = vim.api.nvim_get_current_win()
-                        vim.api.nvim_win_set_buf(win, buf)
-                        vim.api.nvim_win_set_height(win, math.floor(vim.o.lines * 0.2))
-                        vim.fn.jobstart("bemol", {
-                            cwd = brazil_root,
-                            stdout_buffered = false,
-                            on_stdout = function(_, data)
-                                if data then
-                                    vim.schedule(function()
-                                        vim.api.nvim_buf_set_lines(buf, -1, -1, false, data)
-                                        if vim.api.nvim_win_is_valid(win) then
-                                            vim.api.nvim_win_set_cursor(win, { vim.api.nvim_buf_line_count(buf), 0 })
-                                        end
-                                    end)
-                                end
-                            end,
-                            on_exit = function(_, bemol_code)
-                                if bemol_code ~= 0 then
-                                    log_error("running bemol", "Exit code: " .. bemol_code)
-                                    return
-                                end
-
-                                vim.schedule(function()
-                                    vim.notify("Restarting jdtls...", vim.log.levels.INFO)
-                                    require('jdtls').start_or_attach(config)
-                                    vim.notify("Workspace sync completed", vim.log.levels.INFO)
-                                end)
-                            end
-                        })
-                    end
-                })
-            end)
-        end
-    })
+    require("scripts.jdtls-sync").sync({ root_dir = root_dir, home = home, config = config })
 end, { desc = "Sync workspace by removing .bemol, running bemol, and restarting jdtls" })
 
 -- Split string on Enter: closes current string, adds `+ ""` on next line with cursor inside
