@@ -142,54 +142,8 @@ harpoon:extend({
     REPLACE = on_harpoon_change
 })
 
-local conf = require("telescope.config").values
-
-local make_finder = function()
-  local paths = {}
-  for _, item in ipairs(harpoon_files.items) do
-    table.insert(paths, item.value)
-  end
-
-  return require("telescope.finders").new_table {
-    results = paths,
-  }
-end
-local function toggle_telescope(harpoon_files)
-  local file_paths = {}
-  for _, item in ipairs(harpoon_files.items) do
-    table.insert(file_paths, item.value)
-  end
-
-  require("telescope.pickers")
-    .new({}, {
-      prompt_title = "Harpoon  (dd to remove)",
-      finder = require("telescope.finders").new_table {
-        results = file_paths,
-      },
-      previewer = conf.file_previewer {},
-      sorter = conf.generic_sorter {},
-      attach_mappings = function(prompt_buffer_number, map)
-        map(
-          "n",
-          "dd", -- your mapping here
-          function()
-            local state = require "telescope.actions.state"
-            local selected_entry = state.get_selected_entry()
-            local current_picker = state.get_current_picker(prompt_buffer_number)
-
-            harpoon:list():removeAt(selected_entry.index)
-            current_picker:refresh(make_finder())
-          end
-        )
-
-        return true
-      end,
-    })
-    :find()
-end
-
 map({ "n", "v" }, "<leader>hl", function()
-  toggle_telescope(harpoon:list())
+  require("scripts.harpoon-telescope").toggle_telescope()
 end, { desc = "Open harpoon window", remap = true })
 map("n", "<leader>hm", function() harpoon.ui:toggle_quick_menu(harpoon:list()) end, { desc = "Toggle harpoon quick menu" })
 

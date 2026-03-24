@@ -10,8 +10,10 @@ tb_utils.style_buf = function(nr, i, w)
   local ok, harpoon = pcall(require, "harpoon")
   if ok then
     local path = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(nr), ":.")
-    for idx, item in ipairs(harpoon:list().items) do
-      if item.value == path then
+    local list = harpoon:list()
+    for idx = 1, list:length() do
+      local item = list.items[idx]
+      if item and item.value == path then
         local badge = tb_utils.txt("[" .. idx .. "]", "BufO" .. (vim.api.nvim_get_current_buf() == nr and "n" or "ff"))
         return badge .. result
       end
@@ -28,8 +30,12 @@ function M.sort_bufs_by_harpoon()
   if #bufs <= 1 then return end
 
   local harpoon_idx = {}
-  for idx, item in ipairs(harpoon:list().items) do
-    harpoon_idx[item.value] = idx
+  local list = harpoon:list()
+  for idx = 1, list:length() do
+    local item = list.items[idx]
+    if item then
+      harpoon_idx[item.value] = idx
+    end
   end
 
   table.sort(bufs, function(a, b)
@@ -53,8 +59,10 @@ vim.api.nvim_create_autocmd("BufEnter", {
     local ok, harpoon = pcall(require, "harpoon")
     if not ok then return end
     local path = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(args.buf), ":.")
-    for _, item in ipairs(harpoon:list().items) do
-      if item.value == path then
+    local list = harpoon:list()
+    for i = 1, list:length() do
+      local item = list.items[i]
+      if item and item.value == path then
         pinned.pin_buf(args.buf)
         M.sort_bufs_by_harpoon()
         return
