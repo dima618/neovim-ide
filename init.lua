@@ -54,7 +54,6 @@ vim.fn.sign_define('DapStopped', { text = '▶️', texthl = '', linehl = '', nu
 vim.fn.sign_define('DapBreakpointCondition', { text = '❓', texthl = '', linehl = '', numhl = '' })
 vim.fn.sign_define('DapBreakpointRejected', { text = '❌', texthl = '', linehl = '', numhl = '' })
 
-
 -- rustacean
 vim.g.rustaceanvim = function()
     return {
