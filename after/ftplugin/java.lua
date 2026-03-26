@@ -1,5 +1,78 @@
 vim.opt_local.textwidth = 130
 
+local function setup_java_keymaps()
+    local jdtls = require("jdtls")
+    local bufnr = vim.api.nvim_get_current_buf()
+    local map = vim.keymap.set
+
+    vim.cmd("command! -buffer -nargs=? -complete=custom,v:lua.require'jdtls'._complete_compile JdtCompile lua require('jdtls').compile(<f-args>)")
+    vim.cmd("command! -buffer -nargs=? -complete=custom,v:lua.require'jdtls'._complete_set_runtime JdtSetRuntime lua require('jdtls').set_runtime(<f-args>)")
+    vim.cmd("command! -buffer JdtUpdateConfig lua require('jdtls').update_project_config()")
+    vim.cmd("command! -buffer JdtJol lua require('jdtls').jol()")
+    vim.cmd("command! -buffer JdtBytecode lua require('jdtls').javap()")
+    vim.cmd("command! -buffer JdtJshell lua require('jdtls').jshell()")
+
+    map('n', '<leader>jo', jdtls.organize_imports,
+        { desc = "Organize Imports", buffer = bufnr, nowait = true, remap = false })
+    map('n', '<leader>ju', '<Cmd>JdtUpdateConfig<CR>',
+        { desc = "Update Java Config", buffer = bufnr, nowait = true, remap = false })
+    map('n', '<leader>jb', '<Cmd>JdtCompile<CR>',
+        { desc = "Compile Java Code", buffer = bufnr, nowait = true, remap = false })
+
+    local function get_test_config()
+        local root_dir = vim.g._jdtls_root_dir
+        local vm = "-ea -javaagent:/home/ilindmit/.jmockit.jar -Dmagnolio.islocalfleet=true"
+        local log4j = vim.fs.find({ "log4j2-test.xml", "log4j2.xml" }, {
+            upward = true, type = "file", path = vim.fn.expand("%:p:h"), stop = root_dir,
+        })[1]
+        if log4j then vm = vm .. " -Dlog4j.configurationFile=file://" .. log4j end
+        return { vmArgs = vm, javaExec = "/usr/lib/jvm/java-21-amazon-corretto/bin/java" }
+    end
+
+    map('n', '<leader>dc', function()
+        jdtls.test_class({ config_overrides = get_test_config() })
+    end, { desc = "Debug Test Class (DAP)", buffer = bufnr, remap = true })
+    map('n', '<leader>dt', function()
+        jdtls.test_nearest_method({ config_overrides = get_test_config() })
+    end, { desc = "Debug Nearest Method (DAP)", buffer = bufnr, remap = true })
+
+    -- cmp string splitting
+    local function in_java_string()
+        local col = vim.fn.col(".") - 1
+        local before = vim.fn.getline("."):sub(1, col)
+        local in_str = false
+        local i = 1
+        while i <= #before do
+            if before:sub(i, i) == "\\" then i = i + 2
+            elseif before:sub(i, i) == '"' then in_str = not in_str; i = i + 1
+            else i = i + 1 end
+        end
+        return in_str
+    end
+
+    local cmp = require("cmp")
+    local luasnip = require("luasnip")
+    cmp.setup.buffer({
+        mapping = {
+            ["<CR>"] = cmp.mapping(function(fallback)
+                if in_java_string() then
+                    local keys = vim.api.nvim_replace_termcodes('"\r+ "', true, false, true)
+                    vim.api.nvim_feedkeys(keys, "n", false)
+                elseif cmp.visible() then
+                    if luasnip.expandable() then luasnip.expand()
+                    else cmp.confirm({ select = true }) end
+                else fallback() end
+            end),
+        },
+    })
+end
+
+if vim.g._jdtls_config then
+    require("jdtls").start_or_attach(vim.g._jdtls_config)
+    setup_java_keymaps()
+    return
+end
+
 local jdtls = require("jdtls")
 local jdtls_dap = require("jdtls.dap")
 local jdtls_setup = require("jdtls.setup")
@@ -160,8 +233,8 @@ config.cmd = {
     "-Declipse.application=org.eclipse.jdt.ls.core.id1",
     "-Dosgi.bundles.defaultStartLevel=4",
     "-Declipse.product=org.eclipse.jdt.ls.core.product",
-    "-Dlog.protocol=true",
-    "-Dlog.level=ALL",
+    "-Dlog.protocol=false",
+    "-Dlog.level=ERROR",
     "-Xmx4g",
     "-javaagent:" .. lombok_path,
     "--add-modules=ALL-SYSTEM",
@@ -299,64 +372,14 @@ config.init_options = {
 }
 
 -- Start Server
+vim.g._jdtls_config = config
+vim.g._jdtls_root_dir = root_dir
 require('jdtls').start_or_attach(config)
 
--- Set Java Specific Keymaps
-vim.cmd(
-    "command! -buffer -nargs=? -complete=custom,v:lua.require'jdtls'._complete_compile JdtCompile lua require('jdtls').compile(<f-args>)"
-)
-vim.cmd(
-    "command! -buffer -nargs=? -complete=custom,v:lua.require'jdtls'._complete_set_runtime JdtSetRuntime lua require('jdtls').set_runtime(<f-args>)"
-)
-vim.cmd("command! -buffer JdtUpdateConfig lua require('jdtls').update_project_config()")
-vim.cmd("command! -buffer JdtJol lua require('jdtls').jol()")
-vim.cmd("command! -buffer JdtBytecode lua require('jdtls').javap()")
-vim.cmd("command! -buffer JdtJshell lua require('jdtls').jshell()")
+-- Buffer-local keymaps
+setup_java_keymaps()
 
-local bufnr = vim.api.nvim_get_current_buf()
-
-local map = vim.keymap.set
-
-map('n', '<leader>jo', require 'jdtls'.organize_imports,
-    { desc = "Organize Imports", buffer = bufnr, nowait = true, remap = false })
-map('n', '<leader>ju', '<Cmd>JdtUpdateConfig<CR>',
-    { desc = "Update Java Config", buffer = bufnr, nowait = true, remap = false })
-map('n', '<leader>jb', '<Cmd>JdtCompile<CR>',
-    { desc = "Compile Java Code", buffer = bufnr, nowait = true, remap = false })
--- Test keymaps
-local function find_log4j_config()
-    return vim.fs.find({ "log4j2-test.xml", "log4j2.xml" }, {
-        upward = true,
-        type = "file",
-        path = vim.fn.expand("%:p:h"),
-        stop = root_dir,
-    })[1]
-end
-
-local function get_test_config()
-    local vm = "-ea -javaagent:/home/ilindmit/.jmockit.jar -Dmagnolio.islocalfleet=true"
-    local log4j = find_log4j_config()
-    if log4j then
-        vm = vm .. " -Dlog4j.configurationFile=file://" .. log4j
-    end
-    return {
-        vmArgs = vm,
-        javaExec = "/usr/lib/jvm/java-21-amazon-corretto/bin/java"
-    }
-end
-
-map('n', '<leader>dc', function()
-    require 'jdtls'.test_class({
-        config_overrides = get_test_config()
-    })
-end, { desc = "Debug Test Class (DAP)", remap = true })
-map('n', '<leader>dt', function()
-    require 'jdtls'.test_nearest_method({
-        config_overrides = get_test_config()
-    })
-end, { desc = "Debug Nearest Method (DAP)", remap = true })
-
--- JDT Build Command
+-- Global commands (only registered once)
 vim.api.nvim_create_user_command('JdtRefreshJavaInstalls', function()
     os.remove(java_cache_path)
     java_homes = { java_17 = find_java("17"), java_21 = find_java("21") }
@@ -386,48 +409,6 @@ vim.api.nvim_create_user_command(
     { desc = "Rebuild all projects in the workspace" }
 )
 
--- Workspace sync command
 vim.api.nvim_create_user_command('JdtSyncWorkspace', function()
     require("scripts.jdtls-sync").sync({ root_dir = root_dir, home = home, config = config })
 end, { desc = "Sync workspace by removing .bemol, running bemol, and restarting jdtls" })
-
--- Split string on Enter: closes current string, adds `+ ""` on next line with cursor inside
-local function in_java_string()
-    local col = vim.fn.col(".") - 1
-    local before = vim.fn.getline("."):sub(1, col)
-    local in_str = false
-    local i = 1
-    while i <= #before do
-        if before:sub(i, i) == "\\" then
-            i = i + 2
-        elseif before:sub(i, i) == '"' then
-            in_str = not in_str
-            i = i + 1
-        else
-            i = i + 1
-        end
-    end
-    return in_str
-end
-
--- Override cmp's <CR> to split strings, falling back to cmp's normal confirm/fallback chain
-local cmp = require("cmp")
-local luasnip = require("luasnip")
-cmp.setup.buffer({
-    mapping = {
-        ["<CR>"] = cmp.mapping(function(fallback)
-            if in_java_string() then
-                local keys = vim.api.nvim_replace_termcodes('"\r+ "', true, false, true)
-                vim.api.nvim_feedkeys(keys, "n", false)
-            elseif cmp.visible() then
-                if luasnip.expandable() then
-                    luasnip.expand()
-                else
-                    cmp.confirm({ select = true })
-                end
-            else
-                fallback()
-            end
-        end),
-    },
-})

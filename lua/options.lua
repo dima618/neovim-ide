@@ -15,4 +15,4 @@ o.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
 o.foldlevel = 99
 o.foldlevelstart = 99
 o.foldtext = ""
-
+vim.cmd("syntax off")

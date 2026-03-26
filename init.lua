@@ -82,34 +82,46 @@ vim.g.rustaceanvim = function()
     }
 end
 
-vim.api.nvim_create_autocmd("LspAttach", {
-    group = vim.api.nvim_create_augroup("lsp", { clear = true }),
-    callback = function(args)
-        -- vim.api.nvim_create_autocmd("BufWritePre", {
-        --     buffer = args.buf,
-        --     callback = function(opts)
-        --         if vim.bo[opts.buf].filetype ~= 'java' then
-        --             vim.lsp.buf.format { async = false, id = args.data.client_id }
-        --         end
-        --     end,
-        -- })
+do
+    local scrolling = false
+    local scroll_timer = vim.uv.new_timer()
 
-        -- Enable highlighting of symbol under cursor
-        vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
-            buffer = args.buf,
-            callback = function()
-                vim.lsp.buf.document_highlight()
-            end,
-        })
+    vim.api.nvim_create_autocmd("WinScrolled", {
+        callback = function()
+            scrolling = true
+            vim.lsp.buf.clear_references()
+            vim.lsp.inlay_hint.enable(false)
+            scroll_timer:stop()
+            scroll_timer:start(200, 0, vim.schedule_wrap(function()
+                scrolling = false
+                vim.lsp.inlay_hint.enable(true)
+            end))
+        end,
+    })
 
-        vim.api.nvim_create_autocmd({ 'CursorMoved', 'CursorMovedI' }, {
-            buffer = args.buf,
-            callback = function()
-                vim.lsp.buf.clear_references()
-            end,
-        })
-    end
-})
+    vim.api.nvim_create_autocmd("LspAttach", {
+        group = vim.api.nvim_create_augroup("lsp", { clear = true }),
+        callback = function(args)
+            vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
+                buffer = args.buf,
+                callback = function()
+                    if not scrolling then
+                        vim.lsp.buf.document_highlight()
+                    end
+                end,
+            })
+
+            vim.api.nvim_create_autocmd({ 'CursorMoved', 'CursorMovedI' }, {
+                buffer = args.buf,
+                callback = function()
+                    if not scrolling then
+                        vim.lsp.buf.clear_references()
+                    end
+                end,
+            })
+        end
+    })
+end
 
 vim.api.nvim_create_autocmd("BufEnter", {
   pattern = "*",
