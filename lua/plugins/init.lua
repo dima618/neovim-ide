@@ -6,6 +6,8 @@ return {
   },
   {
     "nvim-treesitter/nvim-treesitter",
+    lasy = false,
+    build = ':TSUpdate',
     opts = {
       ensure_installed = {
         "vim",
@@ -13,6 +15,14 @@ return {
         "vimdoc",
         "html",
         "css",
+        "java",
+        "python",
+        "rust",
+        "dart",
+        "javascript",
+        "typescript",
+        "markdown",
+        "bash"
       },
     },
   },
