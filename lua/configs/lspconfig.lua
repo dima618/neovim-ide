@@ -6,6 +6,16 @@ local servers = {
     html = {},
     cssls = {},
     bashls = {},
+    clangd = {
+        cmd = {
+            "clangd",
+            "--background-index",
+            "--clang-tidy",
+            "--header-insertion=iwyu",
+            "--completion-style=detailed",
+            "--function-arg-placeholders=true",
+        },
+    },
     pyright = {
         settings = {
             python = {
@@ -21,7 +31,7 @@ local servers = {
         root_markets = { "package.json" },
         single_file_support = false
     },
-    ["postgres-language-server"] = {}
+    postgres_lsp = {}
 }
 
 for name, opts in pairs(servers) do

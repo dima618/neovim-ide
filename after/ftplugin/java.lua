@@ -19,14 +19,30 @@ local function setup_java_keymaps()
     map('n', '<leader>jb', '<Cmd>JdtCompile<CR>',
         { desc = "Compile Java Code", buffer = bufnr, nowait = true, remap = false })
 
-    local function get_test_config()
+    -- Env vars set on every test run; per-run extras (<leader>de) are merged on top
+    local default_env = {}
+
+    local function get_test_config(extra_env)
         local root_dir = vim.g._jdtls_root_dir
         local vm = "-ea -javaagent:/home/ilindmit/.jmockit.jar -Dmagnolio.islocalfleet=true"
         local log4j = vim.fs.find({ "log4j2-test.xml", "log4j2.xml" }, {
             upward = true, type = "file", path = vim.fn.expand("%:p:h"), stop = root_dir,
         })[1]
         if log4j then vm = vm .. " -Dlog4j.configurationFile=file://" .. log4j end
-        return { vmArgs = vm, javaExec = "/usr/lib/jvm/java-21-amazon-corretto/bin/java" }
+        local env = vim.tbl_extend("force", default_env, extra_env or {})
+        return {
+            vmArgs = vm,
+            javaExec = vim.g._jdtls_test_java_home .. "/bin/java",
+            -- An empty Lua table encodes as a JSON array, which java-debug rejects; omit it instead
+            env = next(env) and env or nil,
+            -- Write the (large) classpath to a temp @argfile instead of inlining it on the
+            -- launch command line. Avoids "command line too long" / TransportTimeoutException
+            -- from the java-debug adapter once the workspace classpath grows past the OS limit.
+            shortenCommandLine = "argfile",
+            -- Launch the debuggee directly (output to the debug console) instead of via the
+            -- runInTerminal reverse request, which was timing out in launchInTerminal.
+            console = "internalConsole",
+        }
     end
 
     map('n', '<leader>dc', function()
@@ -35,6 +51,16 @@ local function setup_java_keymaps()
     map('n', '<leader>dt', function()
         jdtls.test_nearest_method({ config_overrides = get_test_config() })
     end, { desc = "Debug Nearest Method (DAP)", buffer = bufnr, remap = true })
+    map('n', '<leader>de', function()
+        -- Prompt name and value separately so values (e.g. JSON) need no quoting
+        local extra_env = {}
+        while true do
+            local name = vim.fn.input("Env var name (empty to run): ")
+            if name == "" then break end
+            extra_env[name] = vim.fn.input(name .. "=")
+        end
+        jdtls.test_nearest_method({ config_overrides = get_test_config(extra_env) })
+    end, { desc = "Debug Nearest Method with extra env (DAP)", buffer = bufnr, remap = true })
 
     -- cmp string splitting
     local function in_java_string()
@@ -192,6 +218,18 @@ local function find_java(version)
     return candidates[1]
 end
 
+-- Newer JDKs (e.g. JDK25) aren't installed system-wide; use the newest Brazil package cache copy
+local function find_brazil_jdk(version)
+    local matches = vim.fn.glob(vim.fn.expand("~") .. "/brazil-pkg-cache/packages/JDK" .. version
+        .. "/JDK" .. version .. "-*/AL2_x86_64/DEV.STD.PTHREAD/build/jdk-" .. version, false, true)
+    table.sort(matches, function(a, b)
+        local va = vim.version.parse(a:match("JDK" .. version .. "%-([%d%.]+)/"), { strict = false })
+        local vb = vim.version.parse(b:match("JDK" .. version .. "%-([%d%.]+)/"), { strict = false })
+        return vim.version.lt(va, vb)
+    end)
+    return matches[#matches]
+end
+
 local function load_java_homes()
     local f = io.open(java_cache_path, "r")
     if f then
@@ -214,13 +252,17 @@ local function save_java_homes(homes)
 end
 
 local java_homes = load_java_homes()
-if not java_homes then
-    java_homes = { java_17 = find_java("17"), java_21 = find_java("21") }
+if not java_homes or not java_homes.java_25 then
+    java_homes = { java_17 = find_java("17"), java_21 = find_java("21"), java_25 = find_java("25") or find_brazil_jdk("25") }
     save_java_homes(java_homes)
 end
 
 local java_17_home = java_homes.java_17
 local java_21_home = java_homes.java_21
+local java_25_home = java_homes.java_25
+-- Run tests on the newest JDK so classes compiled for any supported release can load.
+-- Global so buffers that take the early _jdtls_config path above can still see it.
+vim.g._jdtls_test_java_home = java_25_home or java_21_home
 
 if not java_21_home then
     vim.notify("No Java 21 installation found", vim.log.levels.ERROR)
@@ -347,6 +389,10 @@ config.settings = {
                 {
                     name = "JavaSE-21",
                     path = java_21_home
+                },
+                {
+                    name = "JavaSE-25",
+                    path = java_25_home
                 },
             })
         }

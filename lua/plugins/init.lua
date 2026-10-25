@@ -98,10 +98,25 @@ return {
     },
     {
         "karb94/neoscroll.nvim",
-        opts = {
-            performance_mode = true,
-        },
-        lazy = false
+        lazy = false,
+        config = function()
+            -- Leave performance_mode off globally. The plugin checks
+            -- `vim.b.neoscroll_performance_mode or vim.g.neoscroll_performance_mode`,
+            -- so a global `true` can't be overridden per-buffer. Instead we enable
+            -- it per-buffer below, only where treesitter is actually active.
+            require("neoscroll").setup({})
+
+            -- Performance mode stops/starts treesitter highlighting during scroll.
+            -- For buffers with no treesitter parser, the plugin's teardown falls
+            -- back to an unguarded `TSBufEnable highlight`, which errors and breaks
+            -- scrolling. Only enable performance mode where treesitter is available.
+            vim.api.nvim_create_autocmd({ "FileType", "BufWinEnter" }, {
+                callback = function(args)
+                    local ok, parser = pcall(vim.treesitter.get_parser, args.buf)
+                    vim.b[args.buf].neoscroll_performance_mode = ok and parser ~= nil
+                end,
+            })
+        end,
     },
     {
       'mrcjkb/rustaceanvim',
@@ -172,8 +187,20 @@ return {
     end,
   },
   {
-    "christoomey/vim-tmux-navigator",
+    "dynamotn/Navigator.nvim",
     lazy = false,
+    config = function()
+      local ok, herdr = pcall(function()
+        return require("configs.navigator-herdr"):new()
+      end)
+      require("Navigator").setup { mux = ok and herdr or "auto" }
+    end,
+    keys = {
+      { "<C-h>", "<cmd>NavigatorLeft<cr>",  mode = { "n", "t" }, desc = "Navigate Left" },
+      { "<C-j>", "<cmd>NavigatorDown<cr>",  mode = { "n", "t" }, desc = "Navigate Down" },
+      { "<C-k>", "<cmd>NavigatorUp<cr>",    mode = { "n", "t" }, desc = "Navigate Up" },
+      { "<C-l>", "<cmd>NavigatorRight<cr>", mode = { "n", "t" }, desc = "Navigate Right" },
+    },
   },
   {
     "ray-x/lsp_signature.nvim",

@@ -100,12 +100,12 @@ end, { desc = "Toggle conditional breakpoint" })
 map("n", "<leader>dui", require("dapui").toggle, { desc = "Toggle DAP UI" })
 map({ "n", "v" }, "<C-f>", require("dapui").eval, { desc = "DAP Eval Float", remap = true })
 
--- Tmux navigator remaps
-map("n", "<C-h>", "<cmd> TmuxNavigateLeft <cr>", { desc = "Window Left", remap = true })
-map("n", "<C-j>", "<cmd> TmuxNavigateDown <cr>", { desc = "Window Down", remap = true })
-map("n", "<C-k>", "<cmd> TmuxNavigateUp <cr>", { desc = "Window Up", remap = true })
-map("n", "<C-l>", "<cmd> TmuxNavigateRight <cr>", { desc = "Window Right", remap = true })
-map("n", "<C-\\>", "<cmd> TmuxNavigatePrevious <cr>", { desc = "Window Previous", remap = true })
+-- Navigator remaps (auto-detects tmux/zellij)
+map("n", "<C-h>", "<cmd>NavigatorLeft<cr>", { desc = "Window Left" })
+map("n", "<C-j>", "<cmd>NavigatorDown<cr>", { desc = "Window Down" })
+map("n", "<C-k>", "<cmd>NavigatorUp<cr>", { desc = "Window Up" })
+map("n", "<C-l>", "<cmd>NavigatorRight<cr>", { desc = "Window Right" })
+map("n", "<C-\\>", "<cmd>NavigatorPrevious<cr>", { desc = "Window Previous" })
 
 -- leap mappings
 map({ "n", "x", "o" }, "s", "<Plug>(leap-forward)")
@@ -236,3 +236,15 @@ vim.api.nvim_create_autocmd("User", {
     end
   end,
 })
+
+-- image.nvim toggle
+map("n", "<leader>mi", function()
+  local img = require("image")
+  if img.is_enabled() then
+    img.disable()
+    vim.notify("Images disabled")
+  else
+    img.enable()
+    vim.notify("Images enabled")
+  end
+end, { desc = "Toggle image rendering" })

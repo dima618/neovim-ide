@@ -3,6 +3,18 @@ vim.g.base46_cache = vim.fn.stdpath "data" .. "/base46/"
 vim.g.mapleader = " "
 vim.opt.clipboard = "unnamedplus"
 
+-- Over SSH without tmux (e.g. herdr) there's no clipboard tool, so copy via OSC 52.
+-- Paste from the unnamed register to avoid hanging on terminals that block OSC 52 reads.
+if vim.env.SSH_TTY and not vim.env.TMUX then
+  local osc52 = require("vim.ui.clipboard.osc52")
+  local function paste() return { vim.fn.split(vim.fn.getreg('"'), "\n"), vim.fn.getregtype('"') } end
+  vim.g.clipboard = {
+    name = "OSC 52",
+    copy = { ["+"] = osc52.copy("+"), ["*"] = osc52.copy("*") },
+    paste = { ["+"] = paste, ["*"] = paste },
+  }
+end
+
 require("scripts.nvprofile-check")
 if vim.g.notes_setup then
   require("scripts.notes-setup")
