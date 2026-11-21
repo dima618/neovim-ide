@@ -190,10 +190,18 @@ return {
     "dynamotn/Navigator.nvim",
     lazy = false,
     config = function()
-      local ok, herdr = pcall(function()
-        return require("configs.navigator-herdr"):new()
-      end)
-      require("Navigator").setup { mux = ok and herdr or "auto" }
+      -- Use the innermost multiplexer: herdr first (it may run inside Rex), then Rex.
+      local mux = "auto"
+      for _, backend in ipairs { "configs.navigator-herdr", "configs.navigator-rex" } do
+        local ok, instance = pcall(function()
+          return require(backend):new()
+        end)
+        if ok then
+          mux = instance
+          break
+        end
+      end
+      require("Navigator").setup { mux = mux }
     end,
     keys = {
       { "<C-h>", "<cmd>NavigatorLeft<cr>",  mode = { "n", "t" }, desc = "Navigate Left" },
