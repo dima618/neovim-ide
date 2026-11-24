@@ -14,6 +14,17 @@ M.base46 = {
     -- },
 }
 
+-- Transparency doesn't reach the statusline's rounded caps: their
+-- background stays the theme's black. Clear it for every mode and block.
+M.base46.hl_override = {}
+for _, group in ipairs({
+    "St_NormalModeSep", "St_VisualModeSep", "St_InsertModeSep", "St_TerminalModeSep",
+    "St_NTerminalModeSep", "St_ReplaceModeSep", "St_ConfirmModeSep", "St_CommandModeSep",
+    "St_SelectModeSep", "St_file_sep", "St_cwd_sep", "St_Pos_sep", "St_lsp_sep",
+}) do
+    M.base46.hl_override[group] = { bg = "NONE" }
+end
+
 M.nvdash = { load_on_startup = true }
 M.ui = {
     --  tabufline = {
