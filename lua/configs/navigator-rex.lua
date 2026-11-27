@@ -6,7 +6,12 @@ local Rex = require("Navigator.mux.vi"):new()
 local directions = { h = "left", j = "down", k = "up", l = "right" }
 
 function Rex:new()
-  assert((vim.env.REX_SESSION or "") ~= "", "[Navigator] rex is not running!")
+  -- Newer Rex sets only REX_BLOCK; rex accepts a block ID wherever a session goes.
+  local session = vim.env.REX_SESSION or ""
+  if session == "" then
+    session = vim.env.REX_BLOCK or ""
+  end
+  assert(session ~= "", "[Navigator] rex is not running!")
   local bin_dir = vim.env.REX_BIN_DIR or ""
   local bin = bin_dir ~= "" and (bin_dir .. "/rex") or "rex"
   assert(vim.fn.executable(bin) == 1, "[Navigator] rex binary not found!")
@@ -17,7 +22,7 @@ function Rex:new()
     vim.list_extend(connection, { "-S", vim.env.REX_SERVER })
   end
 
-  local state = { connection = connection, session = vim.env.REX_SESSION }
+  local state = { connection = connection, session = session }
   self.__index = self
   return setmetatable(state, self)
 end
